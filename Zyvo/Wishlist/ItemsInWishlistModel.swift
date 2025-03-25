@@ -1,0 +1,28 @@
+//
+//  ItemsInWishlistModel.swift
+//  Zyvo
+//
+//  Created by ravi on 4/02/25.
+//
+
+
+// MARK: - Datum
+struct ItemsInWishlistModel: Codable {
+    let wishlistItemID, propertyID: Int?
+    let images: [String]?
+    let title, hourlyRate: String?
+    let isInstantBook, isInWishlist: Int?
+    let rating: Double?
+    let reviewCount: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case wishlistItemID = "wishlist_item_id"
+        case propertyID = "property_id"
+        case images, title
+        case hourlyRate = "hourly_rate"
+        case isInstantBook = "is_instant_book"
+        case isInWishlist = "is_in_wishlist"
+        case rating
+        case reviewCount = "review_count"
+    }
+}

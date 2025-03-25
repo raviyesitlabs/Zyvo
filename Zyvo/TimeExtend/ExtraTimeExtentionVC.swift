@@ -1,0 +1,658 @@
+//
+//  ExtraTimeExtentionVC.swift
+//  Zyvo
+//
+//  Created by ravi on 4/12/24.
+//
+
+import UIKit
+import DropDown
+import Combine
+
+class ExtraTimeExtentionVC: UIViewController {
+    var isCardOpen = "no"
+    var isParkingRulesOpen = "no"
+    var isHostTingRulesOpen = "no"
+    @IBOutlet weak var view_ParkingDesc: UIView!
+    @IBOutlet weak var viewHold_MessageHost: UIView!
+    @IBOutlet weak var view_MessageHost: UIView!
+    @IBOutlet weak var view_HostDesc: UIView!
+    @IBOutlet weak var view_Card: UIView!
+    @IBOutlet weak var imgDownArrowDebitCard: UIImageView!
+    @IBOutlet weak var view_DebitCreditCard: UIView!
+    @IBOutlet weak var StackAbove: UIStackView!
+    @IBOutlet weak var btnConfirmPay: UIButton!
+    @IBOutlet weak var view_RulesParking: UIView!
+    @IBOutlet weak var view_HostRules: UIView!
+    @IBOutlet weak var tblV: UITableView!
+    
+    @IBOutlet weak var tblVH_Const: NSLayoutConstraint!
+    
+    @IBOutlet weak var stackV_MessageHost: UIStackView!
+    
+    @IBOutlet weak var view_MessageHostDesc: UIView!
+    @IBOutlet weak var view_otherReason: UIView!
+    @IBOutlet weak var view_availableDays: UIView!
+    @IBOutlet weak var view_IhaveDoubt: UIView!
+    @IBOutlet weak var btnMsgHost: UIButton!
+    @IBOutlet weak var collecV_BankingDetails: UICollectionView!
+    
+    @IBOutlet weak var lbl_hostName: UILabel!
+    
+    @IBOutlet weak var lbl_PropertyTitle: UILabel!
+    @IBOutlet weak var imgProfileHost: UIImageView!
+    
+    @IBOutlet weak var imgProperty: UIImageView!
+    
+    @IBOutlet weak var lbl_rating: UILabel!
+    
+    @IBOutlet weak var lbl_DistanceInMiles: UILabel!
+    @IBOutlet weak var lbl_numberOfReview: UILabel!
+    
+    @IBOutlet weak var lbl_Taxes: UILabel!
+    @IBOutlet weak var lbl_ZyvoFee: UILabel!
+    @IBOutlet weak var lbl_CleaningFee: UILabel!
+    @IBOutlet weak var lbl_HoursBasedTotal: UILabel!
+    @IBOutlet weak var lbl_AboveHours: UILabel!
+    
+    @IBOutlet weak var lbl_HostRulesDesc: UILabel!
+    @IBOutlet weak var lbl_ParkingRulesDesc: UILabel!
+    @IBOutlet weak var lbl_TimeFromTo: UILabel!
+    @IBOutlet weak var lbl_BelowBookingHours: UILabel!
+    @IBOutlet weak var lbl_BookedDate: UILabel!
+    @IBOutlet weak var lbl_FinalPrice: UILabel!
+    @IBOutlet weak var lbl_AddonPrice: UILabel!
+    
+    @IBOutlet weak var lbl_discount: UILabel!
+    
+    
+    @IBOutlet weak var view_Details: UIView!
+    @IBOutlet weak var btnShowMessageHost: UIButton!
+    @IBOutlet weak var btnAddNewCard: UIButton!
+    
+    @IBOutlet weak var view_Calendar: UIView!
+    
+    @IBOutlet weak var view_Hours: UIView!
+    
+    @IBOutlet weak var view_time2: UIView!
+    
+    @IBOutlet weak var view_Discount: UIView!
+    @IBOutlet weak var view_AddMore: UIView!
+    @IBOutlet weak var view_AddmoreTime: UIView!
+    let items = ["October 22, 2023   ", "From 01pm to 03pm", "2 Hours"]
+    var imgArr = ["calenderblackicon","watchblackicon","watchblackicon"]
+    
+    var arrHost = ["Computer Screen","Bed Sheets","Phone charger","Ring Light"]
+    
+    private let spacing:CGFloat = 16.0
+    
+    let timeDropdown = DropDown()
+    
+    let hoursDropdown = DropDown()
+    let arrHours = ["30 minutes","1 hour","2 hours","3 hours","4 hours","5 hours","6 hours","7 hours","8 hours","9 hours","10 hours","11 hours","12 hours"]
+    
+    var Times = ["Highest Review","Lowest Review","Recent Reviews"]
+    
+    var startTime = ""
+    var endTime = ""
+    var propertyID = ""
+    var profileIMGURL = ""
+    var propertyIMGURL = ""
+    var propertyName = ""
+    var propertyRating = ""
+    var propertyNumberofReview = ""
+    var propertyDistanceInMiles = ""
+    var hostName = ""
+    var bookingID = ""
+    var cardID = ""
+    var property_id = ""
+    var booking_start = ""
+    var booking_end = ""
+    var booking_date = ""
+    var booking_hours : Int? = 0
+    var perHourRate : Int? = 0
+    var minBookhours : Int? = 0
+    var total_amount : Double? = 0.0
+    var booking_amount : Double? = 0.0
+    var taxAmount : Double? = 0.0
+    var DiscountAmount : Double? = 0.0
+    var AddonOnsPrice : Double? = 0.0
+    var ClearningFee : Double? = 0
+    var zyvoServiceFee : Double? = 0
+    var zyvoServiceFeePercentage : Double? = 0
+    var tax : Double? = 0
+    var StartDatetime = ""
+    var EndDatetime = ""
+    var addOnsArr: [AddOn] = []
+    var arrSelectedArr :[Int] = []
+    var DiscountPercentage : Double? = 0.0
+    var taxPercentage : Double? = 0.0
+    
+    var parkDesc = ""
+    var HostingRulesDesc = ""
+    
+    private var cancellables = Set<AnyCancellable>()
+    private var viewModel = BookingPropertyViewModel()
+    
+    private var viewModel2 = ExtraTimeViewModel()
+    
+    
+    var getCardArr : [Card]?
+    
+    var card_id = ""
+    
+    var customerID = ""
+    
+    var indx : Int? = 0
+    
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        bindVC()
+        
+        viewModel.apiForGetSavedCard()
+        print(zyvoServiceFeePercentage ?? 0.0,"zyvoServiceFeePercentage")
+        
+        if (booking_hours ?? 0) > 1 {
+            self.lbl_AboveHours.text = "\(booking_hours ?? 0) hours"
+            self.lbl_BelowBookingHours.text = "\(booking_hours ?? 0) hours"
+        } else {
+            self.lbl_AboveHours.text = "\(booking_hours ?? 0) hour"
+            self.lbl_BelowBookingHours.text = "\(booking_hours ?? 0) hour"
+        }
+        
+        let inputDate = "\(booking_date)"
+        let inputFormatter = DateFormatter()
+        inputFormatter.dateFormat = "yyyy-MM-dd"
+        
+        if let date = inputFormatter.date(from: inputDate) {
+            let outputFormatter = DateFormatter()
+            outputFormatter.dateFormat = "MMMM, d yyyy"
+            let outputDate = outputFormatter.string(from: date)
+            
+            print(outputDate) // Output: March, 4 2025
+            self.lbl_BookedDate.text = "\(outputDate)"
+        }
+        
+        self.lbl_TimeFromTo.text = "\(self.startTime)" + " \(self.endTime)"
+        let bookingAmount = self.booking_amount ?? 0.0
+        let cleaningFee = self.ClearningFee ?? 0.0
+        let serviceFee = self.zyvoServiceFee ?? 0.0
+        let tax = (self.taxAmount ?? 0.0).rounded(toPlaces: 2)
+        let addOns = self.AddonOnsPrice ?? 0.0
+        let AddTotalAmount = (bookingAmount + cleaningFee + serviceFee + tax + addOns).rounded(toPlaces: 2)
+        let totalAmount = (AddTotalAmount -  (self.DiscountAmount ?? 0.0)).rounded(toPlaces: 2)
+        self.lbl_FinalPrice.text = "$\(totalAmount)"
+        self.lbl_hostName.text = self.hostName
+        self.total_amount = totalAmount
+        self.imgProfileHost.layer.cornerRadius = self.imgProfileHost.layer.frame.height / 2
+        self.imgProfileHost.contentMode = .scaleAspectFill
+        self.imgProfileHost.layer.borderWidth = 1
+        self.imgProfileHost.layer.borderColor = UIColor.lightGray.cgColor
+        self.imgProfileHost.loadImage(from:profileIMGURL,placeholder: UIImage(named: "user"))
+        self.imgProperty.loadImage(from:propertyIMGURL,placeholder: UIImage(named: "img1"))
+        self.lbl_DistanceInMiles.text = self.propertyDistanceInMiles  + " sqft"
+        self.lbl_PropertyTitle.text = self.propertyName
+        self.lbl_rating.text  = self.propertyRating
+        self.lbl_numberOfReview.text  = "(\(self.propertyNumberofReview))"
+        self.lbl_ParkingRulesDesc.text = parkDesc
+        self.lbl_HostRulesDesc.text = HostingRulesDesc
+        self.lbl_PropertyTitle.text = self.propertyName
+        self.lbl_rating.text = self.propertyRating
+        self.lbl_numberOfReview.text = self.propertyNumberofReview
+        self.lbl_HoursBasedTotal.text = "$\(self.booking_amount ?? 0.0)"
+        self.lbl_CleaningFee.text = "$\(self.ClearningFee ?? 0.0)"
+        self.lbl_ZyvoFee.text = "$\(self.zyvoServiceFee ?? 0.0)"
+        self.lbl_Taxes.text = "$\((self.taxAmount ?? 0.0).rounded(toPlaces: 2))"
+        self.lbl_AddonPrice.text = "$\(self.AddonOnsPrice ?? 0.0)"
+        print(DiscountAmount ?? 0.0,"DiscountAmount")
+        if DiscountAmount == 0.0 || DiscountAmount == nil {
+            view_Discount.isHidden = true
+        } else {
+            view_Discount.isHidden = false
+            self.lbl_discount.text = "-$\(DiscountAmount ?? 0.0) "
+        }
+        view_AddMore.layer.cornerRadius = view_AddMore.layer.frame.height / 2
+        view_AddMore.layer.borderWidth = 1.5
+        view_AddMore.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        view_Hours.layer.cornerRadius = view_Hours.layer.frame.height / 2
+        view_Hours.layer.borderWidth = 1.5
+        view_Hours.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        view_Calendar.layer.cornerRadius = view_Calendar.layer.frame.height / 2
+        view_Calendar.layer.borderWidth = 1.5
+        view_Calendar.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        view_time2.layer.cornerRadius = view_time2.layer.frame.height / 2
+        view_time2.layer.borderWidth = 1.5
+        view_time2.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        view_AddmoreTime.layer.cornerRadius = view_AddmoreTime.layer.frame.height / 2
+        view_AddmoreTime.layer.borderWidth = 1.5
+        view_AddmoreTime.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        viewHold_MessageHost.isHidden = true
+        view_MessageHost.layer.cornerRadius = 20
+        view_MessageHost.layer.borderWidth = 1.5
+        view_MessageHost.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        view_IhaveDoubt.layer.cornerRadius = 10
+        view_IhaveDoubt.layer.borderWidth = 1.5
+        view_IhaveDoubt.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        view_availableDays.layer.cornerRadius = 10
+        view_availableDays.layer.borderWidth = 1.5
+        view_availableDays.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        view_DebitCreditCard.layer.cornerRadius = view_DebitCreditCard.layer.frame.height / 2
+        view_DebitCreditCard.layer.borderWidth = 1.5
+        view_DebitCreditCard.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        view_otherReason.layer.cornerRadius = 10
+        view_otherReason.layer.borderWidth = 1.5
+        view_otherReason.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        view_MessageHostDesc.layer.cornerRadius = 10
+        view_MessageHostDesc.layer.borderWidth = 1.5
+        view_MessageHostDesc.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        view_HostDesc.isHidden = true
+        view_HostDesc.layer.cornerRadius = 20
+        view_HostDesc.layer.borderWidth = 1.5
+        view_HostDesc.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        view_ParkingDesc.isHidden = true
+        view_ParkingDesc.layer.cornerRadius = 20
+        view_ParkingDesc.layer.borderWidth = 1.5
+        view_ParkingDesc.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        view_Card.isHidden = true
+        view_Card.layer.cornerRadius = 20
+        view_Card.layer.borderWidth = 1.5
+        view_Card.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        
+        StackAbove.layer.cornerRadius = 20
+        StackAbove.layer.borderWidth = 1.5
+        StackAbove.layer.borderColor = UIColor.init(red: 228/255, green: 228/255, blue: 228/255, alpha: 1).cgColor
+        
+        
+        tblV.register(UINib(nibName: "CardCell", bundle: nil), forCellReuseIdentifier: "CardCell")
+        tblV.delegate = self
+        tblV.dataSource = self
+        
+        self.tblV.addObserver(self, forKeyPath: "contentSize", options: NSKeyValueObservingOptions.new, context: nil)
+        
+        btnConfirmPay.layer.cornerRadius = btnConfirmPay.layer.frame.height / 2
+        
+        btnAddNewCard.layer.cornerRadius = btnAddNewCard.layer.frame.height / 2
+        
+        view_RulesParking.layer.cornerRadius = 10
+        view_RulesParking.layer.borderWidth = 1.0
+        view_RulesParking.layer.borderColor = UIColor.lightGray.cgColor
+        
+        view_HostRules.layer.cornerRadius = 10
+        view_HostRules.layer.borderWidth = 1.0
+        view_HostRules.layer.borderColor = UIColor.lightGray.cgColor
+        
+        view_Details.layer.cornerRadius = 30
+        view_Details.layer.borderWidth = 0.5
+        view_Details.layer.borderColor = UIColor.lightGray.cgColor
+        
+        btnShowMessageHost.layer.cornerRadius = 10
+        btnShowMessageHost.layer.borderWidth = 1
+        btnShowMessageHost.layer.borderColor = UIColor.black.cgColor
+    }
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        tblV.layer.removeAllAnimations()
+        tblVH_Const.constant = tblV.contentSize.height
+        UIView.animate(withDuration: 0.5) {
+            self.updateViewConstraints()
+        }
+    }
+    
+    @IBAction func btnAddMoreTime_Tap(_ sender: UIButton) {
+        
+        let vc = self.storyboard?.instantiateViewController(withIdentifier: "AddMoreTimePopUpVC") as! AddMoreTimePopUpVC
+        vc.perHourRate = self.perHourRate ?? 0
+        vc.backAction = {  str, str2 in
+            
+            self.booking_hours = str
+            self.booking_amount = Double(str2)
+            print(str,str2,"dataReceived")
+            
+            if (self.booking_hours ?? 0) > (self.minBookhours ?? 0) {
+                let result = self.calculateFinalPriceWithDiscount(totalPrice: self.booking_amount ?? 0.0, discountPercent: self.DiscountPercentage ?? 0.0, taxPercent: self.taxPercentage ?? 0.0)
+                print("================================WithDiscount====================================")
+                // Printing the Result
+                print("Total Price: \(result.totalPrice)")
+                print("Discount Amount (\(String(describing: self.DiscountPercentage))%) : \(result.discountAmount)")
+                print("Discounted Price: \(result.discountedPrice)")
+                print("Tax Amount (\(String(describing: self.taxPercentage ?? 0.0))%): \(result.taxAmount )")
+                self.taxAmount = result.taxAmount
+                self.DiscountAmount = result.discountAmount
+                print("Final Price: \(result.finalPrice)")
+                self.view_Discount.isHidden = false
+                
+                
+            } else {
+                let result = self.calculateFinalPriceWithoutDiscount(totalPrice: self.booking_amount ?? 0.0, taxPercent: self.taxPercentage ?? 0.0)
+                
+                print("================================WithoutDiscount====================================")
+                print("Tax Amount: \(result.taxAmount)")
+                self.taxAmount = result.taxAmount// 45.0
+                self.DiscountAmount = 0.0
+                self.view_Discount.isHidden = true
+                print("Final Price After Tax: \(result.finalPrice)") // 945.0
+                
+            }
+            
+            let zyvoFeePercentage = Double(self.zyvoServiceFeePercentage ?? 0.0)
+            let bookingAmount = self.booking_amount ?? 0.0
+            self.zyvoServiceFee = ((bookingAmount * zyvoFeePercentage) / 100.0).rounded(toPlaces: 2)
+            
+            print(self.zyvoServiceFee ?? 0.0,"self.zyvoServiceFee")
+            let cleaningFee = self.ClearningFee ?? 0.0
+            let serviceFee = self.zyvoServiceFee ?? 0.0
+            let tax = self.taxAmount ?? 0.0
+            let addonPrice = self.AddonOnsPrice ?? 0.0
+            self.lbl_AboveHours.text =  "$\(self.booking_hours ?? 0) hour"
+            self.lbl_HoursBasedTotal.text = "$\(self.booking_amount ?? 0.0)"
+            self.lbl_CleaningFee.text = "$\(cleaningFee)"
+            self.lbl_ZyvoFee.text = "$\(self.zyvoServiceFee ?? 0.0)"
+            self.lbl_Taxes.text = "$\(self.taxAmount ?? 0.0)"
+            self.lbl_AddonPrice.text = "\(self.AddonOnsPrice ?? 0.0)"
+            
+            let AddTotalAmount = (self.booking_amount ?? 0.0 + cleaningFee + serviceFee + tax + addonPrice).rounded(toPlaces: 2)
+            
+            self.total_amount = AddTotalAmount -  (self.DiscountAmount ?? 0.0)
+            
+            
+        }
+        
+        vc.modalPresentationStyle = .overCurrentContext
+        self.present(vc, animated: true)
+        
+    }
+    
+    func calculateFinalPriceWithDiscount(totalPrice: Double, discountPercent: Double, taxPercent: Double) -> (totalPrice: Double, discountAmount: Double, discountedPrice: Double, taxAmount: Double, finalPrice: Double) {
+        // Step 1: Calculate Discount Amount
+        let discountAmount = (totalPrice * (discountPercent / 100)).rounded(toPlaces: 2)
+        
+        
+        // Step 2: Calculate Discounted Price after Deducting Discount Amount
+        let discountedPrice = (totalPrice - discountAmount).rounded(toPlaces: 2)
+        
+        // Step 3: Calculate Tax Amount
+        let taxAmount = (discountedPrice * (taxPercent / 100)).rounded(toPlaces: 2)
+        
+        // Step 4: Final Price after Adding Tax Amount
+        let finalPrice = (discountedPrice + taxAmount).rounded(toPlaces: 2)
+        
+        // Return All Values as a Tuple
+        return (totalPrice, discountAmount, discountedPrice, taxAmount, finalPrice)
+    }
+    func calculateFinalPriceWithoutDiscount(totalPrice: Double, taxPercent: Double) -> (taxAmount: Double, finalPrice: Double) {
+        // Step 1: Calculate Tax Amount
+        let taxAmount = (totalPrice * (taxPercent / 100)).rounded(toPlaces: 2)
+        
+        // Step 2: Final Price after Tax
+        let finalPrice = (totalPrice + taxAmount).rounded(toPlaces: 2)
+        
+        return (taxAmount, finalPrice)
+    }
+    
+    
+    @IBAction func btnHours_Tap(_ sender: UIButton) {
+        
+        // Set up the dropdown
+        
+        hoursDropdown.anchorView = sender // You can set it to a UIButton or any UIView
+        hoursDropdown.dataSource = arrHours
+        hoursDropdown.direction = .bottom
+        
+        hoursDropdown.bottomOffset = CGPoint(x: 3, y:(hoursDropdown.anchorView?.plainView.bounds.height)!)
+        
+        // Handle selection
+        hoursDropdown.selectionAction = { [weak self] (index, item) in
+            // Do something with the selected month
+            print("Selected month: \(item)")
+            
+            let text = "\(item)"
+            let numberOnly = text.filter { $0.isNumber }
+            print(numberOnly)
+            
+            self?.booking_hours = Int(numberOnly)
+            
+            self?.booking_amount = Double(((self?.booking_hours ?? 0) * (self?.perHourRate ?? 0)))
+            
+        }
+        hoursDropdown.show()
+    }
+    
+    @IBAction func btnIhaveDoubt_Tap(_ sender: UIButton) {
+        view_IhaveDoubt.backgroundColor = UIColor.init(red: 154/255, green: 154/255, blue: 154/255, alpha: 0.25)
+        view_availableDays.backgroundColor = UIColor.white
+        view_otherReason.backgroundColor = UIColor.clear
+    }
+    
+    @IBAction func btnAvailableDays_Tap(_ sender: UIButton) {
+        
+        view_IhaveDoubt.backgroundColor = UIColor.clear
+        view_availableDays.backgroundColor =  UIColor.init(red: 154/255, green: 154/255, blue: 154/255, alpha: 0.25)
+        view_otherReason.backgroundColor = UIColor.clear
+        
+    }
+    
+    @IBAction func btnOtherReason_Tap(_ sender: UIButton) {
+        view_IhaveDoubt.backgroundColor = UIColor.clear
+        view_availableDays.backgroundColor = UIColor.clear
+        view_otherReason.backgroundColor = UIColor.init(red: 154/255, green: 154/255, blue: 154/255, alpha: 0.25)
+    }
+    
+    @IBAction func btnSendMessageHost_Tap(_ sender: UIButton) {
+        viewHold_MessageHost.isHidden = true
+    }
+    
+    @IBAction func btnParking_Tap(_ sender: UIButton) {
+        if isParkingRulesOpen == "no" {
+            view_ParkingDesc.isHidden = false
+            isParkingRulesOpen = "Yes"
+        } else {
+            view_ParkingDesc.isHidden = true
+            isParkingRulesOpen = "no"
+        }
+    }
+    @IBAction func btnHostRules_Tap(_ sender: UIButton) {
+        if isHostTingRulesOpen == "no" {
+            view_HostDesc.isHidden = false
+            isHostTingRulesOpen = "Yes"
+        } else {
+            view_HostDesc.isHidden = true
+            isHostTingRulesOpen = "no"
+        }
+    }
+    
+    @IBAction func btnCreditDebit_Tap(_ sender: UIButton) {
+        if isCardOpen == "no" {
+            view_Card.isHidden = false
+            isCardOpen = "yes"
+            imgDownArrowDebitCard.image = UIImage(named: "ReverseDownArrow")
+        } else {
+            view_Card.isHidden = true
+            isCardOpen = "no"
+            imgDownArrowDebitCard.image = UIImage(named: "downarrow")
+        }
+    }
+    @IBAction func btnBack_Tap(_ sender: UIButton) {
+        print("HELLO")
+        self.navigationController?.popViewController(animated: true)
+    }
+    
+    
+    @IBAction func btnAddNewCard_Tap(_ sender: UIButton) {
+        let vc = self.storyboard?.instantiateViewController(withIdentifier: "AddCardVC") as! AddCardVC
+        self.present(vc, animated: true)
+    }
+    
+    @IBAction func btnPositiveRating_Tap(_ sender: UIButton) {
+        // Set up the dropdown
+        
+        timeDropdown.anchorView = sender // You can set it to a UIButton or any UIView
+        timeDropdown.dataSource = Times
+        timeDropdown.direction = .bottom
+        
+        timeDropdown.bottomOffset = CGPoint(x: 3, y:(timeDropdown.anchorView?.plainView.bounds.height)!)
+        
+        // Handle selection
+        timeDropdown.selectionAction = { [weak self] (index, item) in
+            // Do something with the selected month
+            print("Selected month: \(item)")
+            
+        }
+        timeDropdown.show()
+    }
+    
+    @IBAction func btnShowMessageHost_Tap(_ sender: UIButton) {
+        
+        viewHold_MessageHost.isHidden = false
+        
+    }
+    @IBAction func btnConfirmPay_Tap(_ sender: UIButton) {
+        //        let vc = self.storyboard?.instantiateViewController(withIdentifier: "CheckOutConfirmationVC") as! CheckOutConfirmationVC
+        //        self.navigationController?.pushViewController(vc, animated: true)
+        
+        
+        viewModel2.extension_time = self.booking_hours ?? 0
+        viewModel2.service_fee = "\(self.zyvoServiceFee ?? 0.0)"
+        viewModel2.tax = "\(self.taxAmount ?? 0.0)"
+        viewModel2.cleaning_fee = "\(self.ClearningFee ?? 0.0)"
+        
+        
+        let bookingAmount = self.booking_amount ?? 0.0
+        let cleaningFee = self.ClearningFee ?? 0.0
+        let serviceFee = self.zyvoServiceFee ?? 0.0
+        let tax = self.taxAmount ?? 0.0
+        
+        
+        let AddTotalAmount = bookingAmount + cleaningFee + serviceFee + tax
+        
+        self.total_amount = AddTotalAmount -  (self.DiscountAmount ?? 0.0)
+        
+        viewModel2.extension_total_amount = "\(self.total_amount ?? 0.0)"
+        
+        viewModel2.extension_booking_amount = "\(self.booking_amount ?? 0.0)"//Double(Int(self.lbl_finalPrice.text ?? "") ?? Int(0.0))
+        
+        if self.getCardArr?.count == 0  || self.getCardArr?.count ==  nil {
+            self.showAlert(for: "Please add card")
+        }  else if self.getCardArr?.count == 1 {
+            self.card_id = self.getCardArr?[0].cardID ?? ""
+            
+            viewModel2.cardID = self.card_id
+            viewModel2.customer_id =  self.customerID
+            viewModel2.apiForGetExtraTime(BookingID: self.bookingID)
+        }
+        else {
+            if let preferredCardID = getCardArr?.compactMap({ $0.isPreferred == true ? $0.cardID : nil }).first {
+                print("Preferred Card ID: \(preferredCardID)")
+                self.card_id = "\(preferredCardID)"
+            } else {
+                print("No preferred card found")
+            }
+            
+            viewModel2.cardID = self.card_id
+            viewModel2.customer_id =  self.customerID
+            
+            
+            viewModel2.service_fee =  "\(self.zyvoServiceFee ?? 0.0)"
+            viewModel2.discount_amount =  "\(self.DiscountAmount ?? 0.0)"
+            viewModel2.tax =  "\(self.taxAmount ?? 0.0)"
+            
+            viewModel2.apiForGetExtraTime(BookingID: self.bookingID)
+            
+        }
+        
+    }
+}
+
+extension ExtraTimeExtentionVC :UITableViewDelegate,UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return getCardArr?.count ?? 0
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 50
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tblV.dequeueReusableCell(withIdentifier: "CardCell", for: indexPath) as! CardCell
+        let data = getCardArr?[indexPath.row]
+        
+        cell.lbl_cardNumber.text = ("**** **** **** \(data?.last4 ?? "")")
+        
+        if data?.isPreferred == true {
+            cell.lbl_Preferred.isHidden = false
+        } else {
+            cell.lbl_Preferred.isHidden = true
+        }
+        return cell
+    }
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let data = getCardArr?[indexPath.row]
+        self.indx = indexPath.row
+        self.viewModel.apiForSetPreferredCard(cardID: data?.cardID ?? "")
+    }
+}
+
+extension ExtraTimeExtentionVC {
+    
+    func bindVC(){
+        
+        viewModel.$getCardResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] result in
+                guard let self = self else{return}
+                result?.handle(success: { response in
+                    // let to = response.data?.token
+                    print(response.message ?? "")
+                    
+                    self.getCardArr = response.data?.cards
+                    
+                    self.customerID = response.data?.stripeCustomerID ?? ""
+                    self.tblV.reloadData()
+                })
+            }.store(in: &cancellables)
+        
+        //setPreferredCard
+        viewModel.$setPreferredResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] result in
+                guard let self = self else{return}
+                result?.handle(success: { response in
+                    print(response.message ?? "")
+                    
+                    self.card_id = self.getCardArr?[self.indx ?? 0].cardID ?? ""
+                    
+                    self.viewModel.apiForGetSavedCard()
+                    
+                })
+            }.store(in: &cancellables)
+        
+        
+        //getExtratimeRsult
+        viewModel2.$getExtratimeResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] result in
+                guard let self = self else{return}
+                result?.handle(success: { response in
+                    print(response.message ?? "")
+                    self.tabBarController?.selectedIndex = 2
+                    //self.navigationController?.popViewController(animated: true)
+                })
+            }.store(in: &cancellables)
+        
+        
+    }
+}
