@@ -40,8 +40,6 @@ class HomeDataViewModel :NSObject{
 }
 extension HomeDataViewModel {
     
-    
-    
     func apiforGetBookedPropertyTimer(){
         var para = [String:Any]()
         para[APIKeys.userID] = UserDetail.shared.getUserId()

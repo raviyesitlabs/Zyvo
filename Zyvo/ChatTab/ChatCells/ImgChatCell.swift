@@ -1,35 +1,33 @@
 //
-//  ChatCell.swift
+//  ImgChatCell.swift
 //  Zyvo
 //
-//  Created by ravi on 22/11/24.
+//  Created by ravi on 26/03/25.
 //
 
 import UIKit
 import TwilioConversationsClient
 
-class ChatCell: UITableViewCell {
+class ImgChatCell: UITableViewCell {
 
-  
-    @IBOutlet weak var lbl_msg: UILabel!
-    @IBOutlet weak var lbl_time: UILabel!
+    @IBOutlet weak var lbl_Time: UILabel!
     @IBOutlet weak var lbl_name: UILabel!
-    @IBOutlet weak var img: UIImageView!
+    @IBOutlet weak var imgUser: UIImageView!
+    @IBOutlet weak var img11: UIImageView!
     override func awakeFromNib() {
         super.awakeFromNib()
-       
+        // Initialization code
     }
     
     func setUser(user:String!,imgArr:Media?,messageBody:TCHMessage,user_id:String) {
         print(messageBody,"messageBody")
-        lbl_msg.text = messageBody.body
-       
-        lbl_time.text = self.updateLastMsgTime(messageBody.dateUpdated ?? "")
-//        if let image = imgArr?.image {
-//            self.img.image = image
-//        }else {
-//            img.image = UIImage(named: "usericon")
-//        }
+      
+        lbl_Time.text = self.updateLastMsgTime(messageBody.dateUpdated ?? "")
+        if let image = imgArr?.image {
+            self.imgUser.image = image
+        }else {
+            imgUser.image = UIImage(named: "usericon")
+        }
         let conversationsManager = QuickstartConversationsManager.shared.self
         if let conversation = conversationsManager.conversation {
             let s = conversation.participants()

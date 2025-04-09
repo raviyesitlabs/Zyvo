@@ -90,8 +90,6 @@ class EmailLoginVC: UIViewController {
             return
         }
         viewModel.loginByEmailApi()
-      
-      
     }
     
     @IBAction func btnforgetPassword(_ sender: UIButton) {

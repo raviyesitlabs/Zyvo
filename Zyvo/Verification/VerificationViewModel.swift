@@ -119,6 +119,17 @@ extension VerificationViewModel{
         para[APIKeys.tempID] = tempID
         para[APIKeys.Otp] = otpCode
         
+        para[APIKeys.device_type] = "ios"
+        
+        if let fcmToken = UserDefaults.standard.string(forKey: "fcmToken") {
+            print("FCM Token: \(fcmToken)")
+            para[APIKeys.fcmToken] = "\(fcmToken)"
+          
+        } else {
+            print("No FCM Token found")
+        }
+        
+        
         APIServices<VerificationModel>().post(endpoint: .otpverifysignupphone, parameters: para)
             .receive(on: DispatchQueue.main)
             .sink { complition in
@@ -148,6 +159,15 @@ extension VerificationViewModel{
         para[APIKeys.userID] = userID
         para[APIKeys.Otp] = otpCode
         
+        para[APIKeys.device_type] = "ios"
+        
+        if let fcmToken = UserDefaults.standard.string(forKey: "fcmToken") {
+            print("FCM Token: \(fcmToken)")
+            para[APIKeys.fcmToken] = "\(fcmToken)"
+          
+        } else {
+            print("No FCM Token found")
+        }
         APIServices<VerificationModel>().post(endpoint: .otp_verify_login_phone, parameters: para)
             .receive(on: DispatchQueue.main)
             .sink { complition in
@@ -179,6 +199,17 @@ extension VerificationViewModel{
         para[APIKeys.tempID] = tempID
         para[APIKeys.Otp] = otpCode
         
+        
+//        para[APIKeys.device_type] = "ios"
+//        
+//        if let fcmToken = UserDefaults.standard.string(forKey: "fcmToken") {
+//            print("FCM Token: \(fcmToken)")
+//            para[APIKeys.fcmToken] = "\(fcmToken)"
+//          
+//        } else {
+//            print("No FCM Token found")
+//        }
+//        
         APIServices<VerificationModel>().post(endpoint: .otp_verify_signup_email, parameters: para)
             .receive(on: DispatchQueue.main)
             .sink { complition in

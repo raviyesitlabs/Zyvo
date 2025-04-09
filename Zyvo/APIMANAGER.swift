@@ -12,7 +12,6 @@ import Alamofire
 
 class APIManager {
     static let shared = APIManager()
-    
     private init() {}
     private var cancellables = Set<AnyCancellable>()
     func apiforGetChatToken(role:String,complition:@escaping(String)-> Void){
@@ -25,7 +24,10 @@ class APIManager {
                 switch complition{
                 case .finished :
                     print("Successfully fetched.....")
-                case .failure(let error) : break
+                case .failure(let error) : 
+                    print(error,"error")
+                    break
+                    
                 //    self.chatTokenModelResult = .failure(error)
                 }
             } receiveValue: { response in
@@ -34,6 +36,7 @@ class APIManager {
                     complition(response.data?.token ?? "")
                     UserDetail.shared.setChatToken(response.data?.token ?? "")
                     UserDefaults.standard.set(response.data?.token ?? "", forKey:"twilioToken")
+                    print(response.data?.token ?? "","twilioToken CHAT")
                     QuickstartConversationsManager.shared.loginWithAccessToken(response.data?.token ?? "") { (res) in
                         print("loginWithAccessToken")
                         }

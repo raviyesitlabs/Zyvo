@@ -38,7 +38,7 @@ struct PropertyDetailsModel: Codable {
         case propertyDescription = "property_description"
         case cleaningFee = "cleaning_fee"
         case bulkDiscountRate = "bulk_discount_rate"
-        case addOns = "add_ons"
+        case addOns = "selected_add_ons"
         case hostedBy = "hosted_by"
         case propertyID = "property_id"
         case reviewsTotalCount = "reviews_total_count"
@@ -71,20 +71,43 @@ struct AddOn: Codable {
         case price
         case name
     }
-
+    
     init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        
-        if let priceString = try? container.decode(String.self, forKey: .price) {
-            price = priceString
-        } else if let priceNumber = try? container.decode(Double.self, forKey: .price) {
-            price = String(priceNumber)
-        } else {
-            price = nil
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            name = try container.decode(String.self, forKey: .name)
+
+            // ✅ Handle price as either String, Double, or Int
+            if let priceString = try? container.decode(String.self, forKey: .price) {
+                price = priceString
+            } else if let priceDouble = try? container.decode(Double.self, forKey: .price) {
+                price = String(priceDouble)
+            } else if let priceInt = try? container.decode(Int.self, forKey: .price) {
+                price = String(priceInt)
+            } else {
+                throw DecodingError.typeMismatch(
+                    String.self,
+                    DecodingError.Context(
+                        codingPath: decoder.codingPath,
+                        debugDescription: "Expected price to be a String, Int, or Double"
+                    )
+                )
+            }
         }
-        
-        name = try? container.decode(String.self, forKey: .name)
-    }
+
+    
+//    init(from decoder: Decoder) throws {
+//        let container = try decoder.container(keyedBy: CodingKeys.self)
+//        
+//        if let priceString = try? container.decode(String.self, forKey: .price) {
+//            price = priceString
+//        } else if let priceNumber = try? container.decode(Double.self, forKey: .price) {
+//            price = String(priceNumber)
+//        } else {
+//            price = nil
+//        }
+//        
+//        name = try? container.decode(String.self, forKey: .name)
+//    }
 }
 
 

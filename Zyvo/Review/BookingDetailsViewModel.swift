@@ -84,8 +84,8 @@ extension BookingDetailsViewModel {
                 if response.success ?? false {
                     self.getJoinChannelResult = .success(response)
                 }else {
-                    self.getJoinChannelResult = .success(response)
-                   // topViewController?.showAlert(for: response.message ?? "")
+                    //self.getJoinChannelResult = .success(response)
+                    topViewController?.showAlert(for: response.message ?? "")
                 }
             }.store(in: &cancellables)
     }

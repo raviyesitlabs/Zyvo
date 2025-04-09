@@ -87,10 +87,12 @@ class GetMyProfileViewModel:NSObject {
     }
     
     func encodeImageToString(image: UIImage) {
+        
        image.resizeByByte(maxMB: 1.0) { imageData in
             self.imageEncoded = imageData
            self.apiForUpdateProfileImage()
         }
+        
     }
   
     private func validate(name: String, email: String, phone: String, dob: String) -> Bool {
@@ -163,7 +165,7 @@ extension GetMyProfileViewModel {
                 if response.success ?? false {
                     self.getMyProfileResult = .success(response)
                 }else {
-                    topViewController?.showAlert(for: response.message ?? "")
+                   topViewController?.showAlert(for: response.message ?? "")
                 }
             }.store(in: &cancellables)
         
@@ -189,7 +191,6 @@ extension GetMyProfileViewModel {
                     topViewController?.showAlert(for: response.message ?? "")
                 }
             }.store(in: &cancellables)
-        
     }
     
     func apiForUpdateState(State:String){

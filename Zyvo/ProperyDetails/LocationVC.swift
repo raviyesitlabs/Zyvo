@@ -105,6 +105,8 @@ class LocationVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, Ci
     @IBOutlet weak var selectHourPriceV: UIView!
     @IBOutlet weak var bgCelenderV: UIView!
     
+    var backAction:(_ str : String ) -> () = { str in}
+    
     var StartDatetime = ""
     var startTime = ""
     var endTime = ""
@@ -186,6 +188,18 @@ class LocationVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, Ci
     var totalPage : Int? = 0
     
     var reviewType = "highest_review"
+    
+    private var viewModel1 = BookingDetailsViewModel()
+    
+    var channelName = ""
+    
+    var hostID = 0
+    
+    var getJoinChannelDetails : JoinChanelModel?
+    
+    var hostProfileImg = ""
+    
+    var guestProfileImg = ""
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -378,11 +392,34 @@ class LocationVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, Ci
     
     // Delegate method to detect date selection
     func calendar(_ calendar: FSCalendar, didSelect date: Date, at monthPosition: FSCalendarMonthPosition) {
+        
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        print("Selected Date: \(dateFormatter.string(from: date))")
-        self.bookingDate =  "\(dateFormatter.string(from: date))"
-        self.SelectedDate = "\(dateFormatter.string(from: date))"
+         dateFormatter.dateFormat = "yyyy-MM-dd"
+
+         let selectedDateString = dateFormatter.string(from: date)
+         print("Selected Date: \(selectedDateString)")
+
+         let today = Date()
+         let calendarComponent = Calendar.current
+
+         // Remove time components to compare only dates
+         let selectedDate = calendarComponent.startOfDay(for: date)
+         let currentDate = calendarComponent.startOfDay(for: today)
+
+         if selectedDate < currentDate {
+             // **Show Alert for Past Date**
+             showAlert(for: "You cannot select a past date from the calendar.")
+             calendar.deselect(date) // Deselect the past date
+         } else {
+             // **Allow Selection for Current and Future Dates**
+             self.bookingDate = selectedDateString
+             self.SelectedDate = selectedDateString
+         }
+//        let dateFormatter = DateFormatter()
+//        dateFormatter.dateFormat = "yyyy-MM-dd"
+//        print("Selected Date: \(dateFormatter.string(from: date))")
+//        self.bookingDate =  "\(dateFormatter.string(from: date))"
+//        self.SelectedDate = "\(dateFormatter.string(from: date))"
     }
     
     @IBAction func btnInfo_Tap(_ sender: UIButton) {
@@ -439,7 +476,12 @@ class LocationVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, Ci
     }
     
     @IBAction func btnshowMessageHost_Tap(_ sender: UIButton) {
-        viewHold_MessageHost.isHidden = false
+        
+        let senderID = UserDetail.shared.getUserId()
+        
+        viewModel1.apiForJoinChannel(senderId: senderID, receiverId: "\(self.hostID )", groupChannel: self.channelName, userType: "guest")
+        
+       // viewHold_MessageHost.isHidden = false
     }
     
     @IBAction func btnSendMessageHost_Tap(_ sender: UIButton) {
@@ -466,6 +508,7 @@ class LocationVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, Ci
     }
     
     @IBAction func btnBack_Tap(_ sender: UIButton) {
+        self.backAction("Ravi")
         self.navigationController?.popViewController(animated: true)
     }
     
@@ -547,7 +590,9 @@ class LocationVC: UIViewController, FSCalendarDataSource, FSCalendarDelegate, Ci
                         taxAmount = result.taxAmount// 45.0
                         print("Final Price After Tax: \(result.finalPrice)") // 945.0
                     }
-                    
+                    vc.hostID = self.getPropertyDetails?.hostID ?? 0
+                   // vc.guestName = self.getPropertyDetails?.guestName ?? 0
+                    //vc.guestID = self.getPropertyDetails?.guestID ?? ""
                     vc.hostName = self.getPropertyDetails?.hostedBy ?? ""
                     vc.propertyDistanceInMiles = self.lbl_distance.text ?? ""
                     vc.propertyName = self.lbl_title.text ?? ""
@@ -1172,6 +1217,17 @@ extension LocationVC {
                     
                     let AddONS = self.getPropertyDetails?.addOns ?? []
                     
+                    self.hostID =  self.getPropertyDetails?.hostID ?? 0
+                    
+                    let guestID = Int(UserDetail.shared.getUserId())
+                    
+                    let id1 = min(guestID ?? 0 , self.hostID)
+                    let id2 = max(guestID ?? 0, self.hostID)
+                    
+                    self.channelName = "ZYVOOPROJ_\(id1)_\(id2)_\(self.propertyID)"
+                    print(self.channelName,"self.channelName")
+                    print(id1,id2,self.propertyID,"ASDFASDF")
+                    
                     self.IncludesServiceArr = self.getPropertyDetails?.amenities ?? []
                     
                     self.collecV_IncludedServices.reloadData()
@@ -1330,6 +1386,40 @@ extension LocationVC {
                     self.tblV.reloadData()
                 })
             }.store(in: &cancellables)
+        
+        
+        viewModel1.$getJoinChannelResult
+                  .receive(on: DispatchQueue.main)
+                  .sink { [weak self] result in
+                      guard let self = self else{return}
+                      result?.handle(success: { response in
+                          
+                          self.getJoinChannelDetails = response.data
+                          
+                          var senderID =  self.getJoinChannelDetails?.senderID ?? ""
+                          var receiverID =  self.getJoinChannelDetails?.receiverID ?? ""
+                          
+                          let guestIMG = self.getJoinChannelDetails?.senderAvatar ?? ""
+                          self.guestProfileImg = AppURL.imageURL + guestIMG
+                          
+                          let HostIMG = self.getJoinChannelDetails?.receiverAvatar ?? ""
+                          self.hostProfileImg = AppURL.imageURL + HostIMG
+                          
+                          let stryB = UIStoryboard(name: "Chat", bundle: nil)
+                          if let vc = stryB.instantiateViewController(withIdentifier: "ChatVC") as? ChatVC {
+                          vc.uniqueConversationName = self.channelName
+                          vc.friend_id = "\(receiverID)"
+                          vc.SenderID = senderID
+                          vc.guestName = self.getJoinChannelDetails?.senderName ?? ""
+                          vc.hostProfileImg = self.hostProfileImg
+                          vc.guesttProfileImg =  self.guestProfileImg
+                          self.tabBarController?.tabBar.isHidden = true
+                          vc.hidesBottomBarWhenPushed = true
+                          self.navigationController?.pushViewController(vc, animated: true)
+                          }
+                          
+                      })
+                  }.store(in: &cancellables)
         
     }
     

@@ -28,6 +28,8 @@ class HostBookingsVC: UIViewController {
         super.viewDidLoad()
         bindVC()
         
+       
+        
         viewSearch.applyRoundedStyle()
         tblV.register(UINib(nibName: "HostBookingCell", bundle: nil), forCellReuseIdentifier: "HostBookingCell")
         tblV.delegate = self
@@ -35,10 +37,14 @@ class HostBookingsVC: UIViewController {
         secrchTF.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
         
     }
+  
+
     
     
     override func viewWillAppear(_ animated: Bool) {
         viewModel.apiforGetBookingsList()
+        viewModel.apiforReadBookingCount()
+       
     }
     
     @objc func textFieldDidChange(_ textField: UITextField) {
@@ -271,6 +277,19 @@ extension HostBookingsVC {
                     self.S_bookingsDataArr = self.bookingsDataArr
                     print(self.bookingsDataArr,"Booking DATA YAHI HAI")
                     self.tblV.reloadData()
+                })
+            }.store(in: &cancellables)
+        
+        
+        viewModel.$readBookingResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] result in
+                guard let self = self else{return}
+                result?.handle(success: { response in
+                    print(response.message ?? "")
+                    
+                    NotificationCenter.default.post(name: NSNotification.Name("UpdateBookingBadge"), object: nil, userInfo: ["unread_booking_count": 0])
+                    
                 })
             }.store(in: &cancellables)
     }

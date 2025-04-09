@@ -16,8 +16,27 @@ class ChatDataViewModel :NSObject{
     @Published var getChatDataResult:Result<BaseResponse<[ChatDataModel]>,Error>? = nil
     
     
-    @Published var blockResult:Result<BaseResponse<EmptyModel>,Error>? = nil
+    @Published var blockResult:Result<BaseResponse<UserBlockStatusModel>,Error>? = nil
     
+    @Published var getFavResult:Result<BaseResponse<ChatFavouriteModel>,Error>? = nil
+    
+    @Published var getUnreadBookingCount:Result<BaseResponse<unreadbookingModel>,Error>? = nil
+    
+    
+    
+    
+    
+    @Published var getMuteUnmuteResult:Result<BaseResponse<SetMuteUnmute>,Error>? = nil
+    
+    @Published var setArchiveResult:Result<BaseResponse<SetArchiveUnarchiveModel>,Error>? = nil
+    
+    @Published var sendChatNotiResult:Result<BaseResponse<EmptyModel>,Error>? = nil
+    
+    
+    @Published var getDeleteChatResult:Result<BaseResponse<EmptyModel>,Error>? = nil
+    
+    
+  
     
     
    var latitude = ""
@@ -64,11 +83,12 @@ extension ChatDataViewModel {
     
     func apiForBlockUser(senderId : String,group_channel : String,blockUnblock : String){
         var para = [String:Any]()
+        
         para[APIKeys.senderId] = senderId
         para[APIKeys.group_channel] = group_channel
         para[APIKeys.blockUnblock] = blockUnblock
         
-        APIServices<EmptyModel>().post(endpoint: .block_user, parameters: para,loader: false)
+        APIServices<UserBlockStatusModel>().post(endpoint: .block_user, parameters: para,loader: true)
             .receive(on: DispatchQueue.main)
             .sink { complition in
                 switch complition{
@@ -86,6 +106,168 @@ extension ChatDataViewModel {
                 }
             }.store(in: &cancellables)
     }
+    
+    func apiForSetFavourite(senderId : String,group_channel : String,favorite : String){
+        var para = [String:Any]()
+        para[APIKeys.senderId] = senderId
+        para[APIKeys.group_channel] = group_channel
+        para[APIKeys.favorite] = favorite
+        
+        APIServices<ChatFavouriteModel>().post(endpoint: .mark_favorite_chat, parameters: para,loader: true)
+            .receive(on: DispatchQueue.main)
+            .sink { complition in
+                switch complition{
+                case .finished :
+                    print("Successfully fetched.....")
+                case .failure(let error) :
+                    self.getFavResult = .failure(error)
+                }
+            } receiveValue: { response in
+                if response.success ?? false {
+                    self.getFavResult = .success(response)
+                }else {
+                    self.getFavResult = .success(response)
+                    //topViewController?.showAlert(for: response.message ?? "")
+                }
+            }.store(in: &cancellables)
+    }
+    
+    func apiForSetMuteUnmute(senderId : String,group_channel : String,mute : String){
+        var para = [String:Any]()
+        para[APIKeys.userID] = UserDetail.shared.getUserId()
+        para[APIKeys.group_channel] = group_channel
+        para[APIKeys.mute] = mute
+        
+        APIServices<SetMuteUnmute>().post(endpoint: .mute_chat, parameters: para,loader: true)
+            .receive(on: DispatchQueue.main)
+            .sink { complition in
+                switch complition{
+                case .finished :
+                    print("Successfully fetched.....")
+                case .failure(let error) :
+                    self.getMuteUnmuteResult = .failure(error)
+                }
+            } receiveValue: { response in
+                if response.success ?? false {
+                    self.getMuteUnmuteResult = .success(response)
+                }else {
+                    self.getMuteUnmuteResult = .success(response)
+                    //topViewController?.showAlert(for: response.message ?? "")
+                }
+            }.store(in: &cancellables)
+    }
+    
+    func apiForSetArchiveUnarchive(senderId : String,group_channel : String){
+        var para = [String:Any]()
+        para[APIKeys.userID] = UserDetail.shared.getUserId()
+        para[APIKeys.group_channel] = group_channel
+       
+        APIServices<SetArchiveUnarchiveModel>().post(endpoint: .toggle_archive_unarchive, parameters: para,loader: true)
+            .receive(on: DispatchQueue.main)
+            .sink { complition in
+                switch complition{
+                case .finished :
+                    print("Successfully fetched.....")
+                case .failure(let error) :
+                    self.setArchiveResult = .failure(error)
+                }
+            } receiveValue: { response in
+                if response.success ?? false {
+                    self.setArchiveResult = .success(response)
+                }else {
+                    self.setArchiveResult = .success(response)
+                    //topViewController?.showAlert(for: response.message ?? "")
+                }
+            }.store(in: &cancellables)
+    }
+    
+    
+    func apiForSendChatNotification(senderId : String,receiver_id : String){
+        var para = [String:Any]()
+        para[APIKeys.senderid] = senderId
+        para[APIKeys.receiverid] = receiver_id
+       
+        APIServices<EmptyModel>().post(endpoint: .send_chat_notification, parameters: para,loader: true)
+            .receive(on: DispatchQueue.main)
+            .sink { complition in
+                switch complition{
+                case .finished :
+                    print("Successfully fetched.....")
+                case .failure(let error) :
+                    self.sendChatNotiResult = .failure(error)
+                }
+            } receiveValue: { response in
+                if response.success ?? false {
+                    self.sendChatNotiResult = .success(response)
+                }else {
+                    self.sendChatNotiResult = .success(response)
+                    //topViewController?.showAlert(for: response.message ?? "")
+                }
+            }.store(in: &cancellables)
+    }
+    
+    func apiForDeleteChat(userType : String,groupChannel : String){
+        var para = [String:Any]()
+        
+        para[APIKeys.userID] = UserDetail.shared.getUserId()
+        para[APIKeys.usertype] = userType
+        para[APIKeys.group_channel] = groupChannel
+       
+        APIServices<EmptyModel>().post(endpoint: .delete_chat, parameters: para,loader: true)
+            .receive(on: DispatchQueue.main)
+            .sink { complition in
+                switch complition{
+                case .finished :
+                    print("Successfully fetched.....")
+                case .failure(let error) :
+                    self.getDeleteChatResult = .failure(error)
+                }
+            } receiveValue: { response in
+                if response.success ?? false {
+                    self.getDeleteChatResult = .success(response)
+                }else {
+                    self.getDeleteChatResult = .success(response)
+                    //topViewController?.showAlert(for: response.message ?? "")
+                }
+            }.store(in: &cancellables)
+    }
+    
+    
+    func apiForGetUnreadCount(){
+        var para = [String:Any]()
+        
+        para[APIKeys.userID] = UserDetail.shared.getUserId()
+      
+        APIServices<unreadbookingModel>().post(endpoint: .host_unread_bookings, parameters: para,loader: false)
+            .receive(on: DispatchQueue.main)
+            .sink { complition in
+                switch complition{
+                case .finished :
+                    print("Successfully fetched.....")
+                case .failure(let error) :
+                    self.getUnreadBookingCount = .failure(error)
+                }
+            } receiveValue: { response in
+                if response.success ?? false {
+                    self.getUnreadBookingCount = .success(response)
+                }else {
+                    self.getUnreadBookingCount = .success(response)
+                    //topViewController?.showAlert(for: response.message ?? "")
+                }
+            }.store(in: &cancellables)
+    }
 
+
+
+
+    
+    // MARK: - DataClass
+    struct DataClass: Codable {
+        let unreadBookingCount: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case unreadBookingCount = "unread_booking_count"
+        }
+    }
   
 }

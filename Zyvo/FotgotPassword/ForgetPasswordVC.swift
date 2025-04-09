@@ -91,7 +91,7 @@ extension ForgetPasswordVC {
                     print(response.data?.email ?? "0","email")
                     print(response.data?.otp ?? 0,"otp")
                     
-                    // UserDetail.shared.setTokenWith("\(response.data?.token ?? "0")")
+                    //UserDetail.shared.setTokenWith("\(response.data?.token ?? "0")")
                     self.tobeVerify(userid: (response.data?.userID ?? 0), OTP: "\(response.data?.otp ?? 0)", email: "\(response.data?.email ?? "0")")
                     
                 })

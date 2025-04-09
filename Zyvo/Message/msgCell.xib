@@ -82,6 +82,12 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Ek0-RG-5ev">
+                                <rect key="frame" x="198.66666666666666" y="28.333333333333336" width="0.0" height="0.0"/>
+                                <fontDescription key="fontDescription" name="Poppins-Medium" family="Poppins" pointSize="16"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" text="Hello can we talk about..." textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="dKo-Oa-rak">
                                 <rect key="frame" x="100" y="61.666666666666671" width="265" height="39.333333333333329"/>
                                 <fontDescription key="fontDescription" name="Poppins-Regular" family="Poppins" pointSize="12.899999618530273"/>
@@ -95,7 +101,7 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Starssicon" translatesAutoresizingMaskIntoConstraints="NO" id="3ay-ZD-g2c">
-                                <rect key="frame" x="198.66666666666666" y="21" width="15" height="15"/>
+                                <rect key="frame" x="203.66666666666666" y="21" width="15" height="15"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="15" id="7q4-t5-a9q"/>
                                     <constraint firstAttribute="width" constant="15" id="ycN-xO-f9K"/>
@@ -115,10 +121,13 @@
                         <constraints>
                             <constraint firstItem="Gow-rb-HPT" firstAttribute="bottom" secondItem="8gp-oM-9Nu" secondAttribute="bottom" constant="-5" id="2kF-qc-iLL"/>
                             <constraint firstItem="zdJ-8G-PuV" firstAttribute="top" secondItem="8gp-oM-9Nu" secondAttribute="top" constant="5" id="6sh-7u-ueE"/>
-                            <constraint firstItem="3ay-ZD-g2c" firstAttribute="leading" secondItem="zdJ-8G-PuV" secondAttribute="trailing" constant="5" id="CCo-VQ-aHg"/>
+                            <constraint firstItem="u4i-48-UeI" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="3ay-ZD-g2c" secondAttribute="trailing" constant="10" id="HXW-cW-17r"/>
+                            <constraint firstItem="Ek0-RG-5ev" firstAttribute="leading" secondItem="zdJ-8G-PuV" secondAttribute="trailing" constant="5" id="IAq-0G-83A"/>
                             <constraint firstAttribute="trailing" secondItem="dKo-Oa-rak" secondAttribute="trailing" constant="10" id="LJw-c8-Ufa"/>
                             <constraint firstItem="gtD-mT-ant" firstAttribute="leading" secondItem="zdJ-8G-PuV" secondAttribute="leading" id="ODH-4b-hEI"/>
                             <constraint firstItem="gtD-mT-ant" firstAttribute="top" secondItem="zdJ-8G-PuV" secondAttribute="bottom" constant="4" id="Xtq-eM-OF3"/>
+                            <constraint firstItem="3ay-ZD-g2c" firstAttribute="leading" secondItem="Ek0-RG-5ev" secondAttribute="trailing" constant="5" id="YWw-6R-S2X"/>
+                            <constraint firstItem="Ek0-RG-5ev" firstAttribute="centerY" secondItem="zdJ-8G-PuV" secondAttribute="centerY" id="ZNJ-AR-q7M"/>
                             <constraint firstItem="u4i-48-UeI" firstAttribute="centerY" secondItem="zdJ-8G-PuV" secondAttribute="centerY" id="ZNh-yY-e0a"/>
                             <constraint firstItem="Gow-rb-HPT" firstAttribute="trailing" secondItem="8gp-oM-9Nu" secondAttribute="trailing" constant="-5" id="aPw-ng-fG7"/>
                             <constraint firstItem="dKo-Oa-rak" firstAttribute="top" secondItem="gtD-mT-ant" secondAttribute="bottom" id="bW1-SG-oPs"/>
@@ -144,6 +153,7 @@
                 <outlet property="btnDetails" destination="LGD-c1-zaN" id="C43-NU-T4m"/>
                 <outlet property="btnMenu" destination="u4i-48-UeI" id="OKu-bw-G6g"/>
                 <outlet property="img" destination="tN4-Lt-4G6" id="f9K-04-aRt"/>
+                <outlet property="lbl_PropertyTitle" destination="Ek0-RG-5ev" id="B4L-46-YYh"/>
                 <outlet property="lbl_message" destination="dKo-Oa-rak" id="KNg-zY-aZz"/>
                 <outlet property="lbl_time" destination="gtD-mT-ant" id="tDu-6b-sQb"/>
                 <outlet property="mainV" destination="495-xC-OHJ" id="eh8-53-gnU"/>

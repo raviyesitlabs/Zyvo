@@ -29,9 +29,19 @@ class MyProfileViewModel:NSObject {
         super.init()
     }
     func encodeImageToString(image: UIImage) {
-        image.resizeByByte(maxMB: 1.0) { imageData in
-            self.imageEncoded = imageData
-            self.uploadProfile()
+//        image.resizeByByte(maxMB: 1.0) { imageData in
+//            self.imageEncoded = imageData
+//            self.uploadProfile()
+//        }
+        image.resizeByByte(maxMB: 1) { (data) in
+            DispatchQueue.main.async {
+                guard let imageData = data else {
+                    topViewController?.showAlert(for: "Image could not be processed. Please select a smaller image.")
+                    return
+                }
+                self.imageEncoded = imageData
+                self.uploadProfile()
+            }
         }
     }
 }
@@ -57,7 +67,6 @@ extension MyProfileViewModel {
         para[APIKeys.identityverify]             =      self.identity_verify
         
         
-      
         imagePara[APIKeys.profileImg] = imageEncoded
         
         APIServices<CreateProfileModel>().SendAnyThing(endpoint: .completeprofile, parameters: para, images: imagePara)

@@ -25,6 +25,8 @@ class HostReportViolationPopUpVc: UIViewController,UITextViewDelegate {
     var getResonsViewModel = getReportReasonViewModel()
     var reportViewModel = ReportViewModel()
     
+    private var viewModel = VilolationReasonViewModel()
+    
     private var cancellables = Set<AnyCancellable>()
     
     var items = [String]()
@@ -32,10 +34,14 @@ class HostReportViolationPopUpVc: UIViewController,UITextViewDelegate {
     var propertyId : Int?
     var reportReasonID : Int?
     var additionMsg = ""
+    var ComingFrom = ""
+    var reporter_id = ""
+    var reported_user_id = ""
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        bindVC_Reportchat()
         bindVC_getReason()
         bindVC_ReportGuest()
         getResonsViewModel.getReviewRasons()
@@ -67,7 +73,19 @@ class HostReportViolationPopUpVc: UIViewController,UITextViewDelegate {
     }
     
     @IBAction func btnSubmitReport_Tap(_ sender: UIButton) {
-        reportViewModel.reviewGuest(booking_id: self.bookingId ?? 0, property_id: self.propertyId ?? 0, reportReasonsId: self.reportReasonID ?? 0, additionalDetails: self.additionMsg)
+
+        
+        if txt_Reason.text == "" {
+            self.showToast("Please select reason")
+        } else if additionDetailTxtV.text == "You can also add additional details to help us investigate further." || self.additionDetailTxtV.text == "" {
+            self.showToast("Please enter additional detail")
+        } else if ComingFrom == "HostChat" {
+            viewModel.apiForSubmitChatReport(reporter_id: self.reporter_id, reported_user_id: self.reported_user_id, reason: self.txt_Reason.text ?? "", message: self.additionDetailTxtV.text ?? "")
+        }  else {
+            reportViewModel.reviewGuest(booking_id: self.bookingId ?? 0, property_id: self.propertyId ?? 0, reportReasonsId: self.reportReasonID ?? 0, additionalDetails: self.additionMsg)
+            
+        }
+         
     }
     
     @IBAction func btnSelectReason_Tap(_ sender: UIButton) {
@@ -134,5 +152,22 @@ extension HostReportViolationPopUpVc{
                     }
             })
         }.store(in: &cancellables)
+    }
+    func bindVC_Reportchat() {
+        // Submit Chat Report Result
+        viewModel.$getSubmitChatReportResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] result in
+                guard let self = self else { return }
+                result?.handle(success: { response in
+                    self.btnsubmit.setTitle("Submitted", for: .normal)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        self.dismiss(animated: true) {
+                            self.backAction("ReportSubmitted")
+                        }
+                    }
+                })
+            }
+            .store(in: &cancellables)
     }
 }

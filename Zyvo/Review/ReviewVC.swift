@@ -406,18 +406,8 @@ class ReviewVC: UIViewController {
     @IBAction func btnMessageHost_Tap(_ sender: UIButton) {
         
         let senderID = UserDetail.shared.getUserId()
-        
         viewModel.apiForJoinChannel(senderId: senderID, receiverId: "\(self.getBookingDetails?.hostID ?? 0)", groupChannel: self.channelName, userType: "guest")
         
-        //        let stryB = UIStoryboard(name: "Chat", bundle: nil)
-        //        if let vc = stryB.instantiateViewController(withIdentifier: "ChatVC") as? ChatVC {
-        //            vc.uniqueConversationName = self.channelName
-        //            vc.friend_id = "\(self.getBookingDetails?.hostID ?? 0)"
-        //            vc.hostProfileImg = self.hostProfileImg
-        //            self.tabBarController?.tabBar.isHidden = true
-        //            vc.hidesBottomBarWhenPushed = true
-        //           self.navigationController?.pushViewController(vc, animated: true)
-        //        }
     }
 }
 
@@ -829,13 +819,7 @@ extension ReviewVC {
                         let imgURL2 = AppURL.imageURL + image2
                         self.img3.loadImage(from:imgURL2,placeholder: UIImage(named: "img1"))
                     }
-                    //                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    //                        //  self.updateCollectionViewHeight()
-                    //                        self.collecV_IncludedServices.reloadData()
-                    //                        self.updateCollectionViewHeight()
-                    //                        self.collecV_Host.reloadData()
-                    //                    }
-                    
+                   
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         //  self.updateCollectionViewHeight()
                         self.collecV_IncludedServices.reloadData()

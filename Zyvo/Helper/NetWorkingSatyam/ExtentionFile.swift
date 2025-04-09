@@ -98,6 +98,18 @@ extension UIImageView {
             }
         })
     }
+    func loadImage(from url: URL?, placeholder: UIImage? = nil, indicator: SDWebImageActivityIndicator = .grayLarge) {
+        // Set up the loading indicator
+        self.sd_imageIndicator = indicator
+    
+        self.sd_setImage(with: url, placeholderImage: placeholder, options: .highPriority, completed: { (image, error, cacheType, url) in
+            if let error = error {
+                print("Error loading image: \(error.localizedDescription)")
+            } else {
+                print("Image loaded successfully from URL: \(url?.absoluteString ?? "unknown")")
+            }
+        })
+    }
     
 }
 extension NSObject {
@@ -528,27 +540,72 @@ extension UIImage {
     }
   
     
-    func resizeByByte(maxMB: Double, completion: @escaping (Data) -> Void) {
-        
-        var compressQuality: CGFloat = 1
-        var imageData = Data()
-        let max = maxMB * 1000000.0
-        var imageByte = Double(self.jpegData(compressionQuality: 1.0)?.count ?? 0)
-        imageData = self.jpegData(compressionQuality: compressQuality)!
-                
-        while imageByte > max {
-            imageData = self.jpegData(compressionQuality: compressQuality)!
-            imageByte = Double(imageData.count)
-//            imageByte = Double(self.jpegData(compressionQuality: compressQuality)?.count ?? 0)
-            compressQuality -= 0.1
+//    func resizeByByte(maxMB: Double, completion: @escaping (Data) -> Void) {
+//
+//        var compressQuality: CGFloat = 1
+//        var imageData = Data()
+//        let max = maxMB * 1000000.0
+//        var imageByte = Double(self.jpegData(compressionQuality: 1.0)?.count ?? 0)
+//        imageData = self.jpegData(compressionQuality: compressQuality)!
+//
+//        while imageByte > max {
+//            imageData = self.jpegData(compressionQuality: compressQuality)!
+//            imageByte = Double(imageData.count)
+////            imageByte = Double(self.jpegData(compressionQuality: compressQuality)?.count ?? 0)
+//            compressQuality -= 0.1
+//        }
+//
+//        if max > imageByte {
+//            completion(imageData)
+//        } else {
+//            completion(self.jpegData(compressionQuality: 1.0)!)
+//        }
+//    }
+    
+    func resizeByByte(maxMB: Double, completion: @escaping (Data?) -> Void) {
+        var compressQuality: CGFloat = 1.0
+        let maxBytes = maxMB * 1000000.0 // Convert MB to Bytes
+
+        guard var imageData = self.jpegData(compressionQuality: compressQuality) else {
+            showAlert(message: "Failed to process image.")
+            completion(nil)
+            return
         }
-        
-        if max > imageByte {
-            completion(imageData)
+
+        var imageByteSize = Double(imageData.count)
+
+        while imageByteSize > maxBytes && compressQuality > 0.1 {
+            compressQuality -= 0.1
+            if let compressedData = self.jpegData(compressionQuality: compressQuality) {
+                imageData = compressedData
+                imageByteSize = Double(imageData.count)
+            } else {
+                self.showAlert(message: "Image compression failed.")
+                completion(nil)
+                return
+            }
+        }
+
+        if imageByteSize > maxBytes {
+            showAlert(message: "Image size is too large and cannot be compressed below \(maxMB) MB. Please select a smaller image.")
+            completion(nil)
         } else {
-            completion(self.jpegData(compressionQuality: 1.0)!)
+            completion(imageData)
         }
     }
+    
+    // **Function to Show Alert**
+    func showAlert(message: String) {
+        DispatchQueue.main.async {
+            let alert = UIAlertController(title: "Image Too Large", message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            if let topVC = UIApplication.shared.keyWindow?.rootViewController {
+                topVC.present(alert, animated: true, completion: nil)
+            }
+        }
+    }
+    
+    
     func resize(withPercentage percentage: CGFloat) -> UIImage? {
         var newRect = CGRect(origin: .zero, size: CGSize(width: size.width*percentage, height: size.height*percentage))
         UIGraphicsBeginImageContextWithOptions(newRect.size, true, 1)

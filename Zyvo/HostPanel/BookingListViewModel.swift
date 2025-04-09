@@ -13,6 +13,8 @@ class BookingListViewModel :NSObject{
     
   
     @Published var getBookingsListResult:Result<BaseResponse<[BookingListDataModel]>,Error>? = nil
+    
+    @Published var readBookingResult:Result<BaseResponse<EmptyModel>,Error>? = nil
   
   
     private var cancellables = Set<AnyCancellable>()
@@ -44,6 +46,35 @@ extension BookingListViewModel {
             }.store(in: &cancellables)
 
     }
+    
+    
+    func apiforReadBookingCount(){
+        var para = [String:Any]()
+        para[APIKeys.userID] = UserDetail.shared.getUserId()
+     
+        APIServices<EmptyModel>().post(endpoint: .hostReadBooking, parameters: para,loader: true)
+            .receive(on: DispatchQueue.main)
+            .sink { complition in
+        
+                switch complition{
+                case .finished :
+                    print("Successfully fetched.....")
+                case .failure(let error) :
+                    self.readBookingResult = .failure(error)
+                }
+            } receiveValue: { response in
+                if response.success ?? false {
+                    self.readBookingResult = .success(response)
+                }else {
+                    self.readBookingResult = .success(response)
+                    //topViewController?.showAlert(for: response.message ?? "")
+                    
+                }
+            }.store(in: &cancellables)
 
+    }
+    
+    
+   
    
 }

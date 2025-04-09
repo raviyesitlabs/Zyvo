@@ -257,6 +257,38 @@ static let shared = UserDetail()
     func removeChatToken() -> Void {
         UserDefaults.standard.removeObject(forKey: UserKeys.chatToken.rawValue)
     }
+    
+    func setisTimeExtend(_ sUserId:String) -> Void {
+        UserDefaults.standard.set(sUserId, forKey: UserKeys.isTimeExtend.rawValue)
+        print(sUserId)
+    }
+    func getisTimeExtend() -> String {
+        if let userId = UserDefaults.standard.value(forKey: UserKeys.isTimeExtend.rawValue) as? String
+        {
+            return userId
+        }
+        return ""
+    }
+    
+    func removeisTimeExtend() -> Void {
+        UserDefaults.standard.removeObject(forKey: UserKeys.isTimeExtend.rawValue)
+    }
+    
+    func setisNeedMoreOpenOnce(_ sUserId:String) -> Void {
+        UserDefaults.standard.set(sUserId, forKey: UserKeys.isNeedMoreOpenOnce.rawValue)
+        print(sUserId)
+    }
+    func getisNeedMoreOpenOnce() -> String {
+        if let userId = UserDefaults.standard.value(forKey: UserKeys.isNeedMoreOpenOnce.rawValue) as? String
+        {
+            return userId
+        }
+        return ""
+    }
+    
+    func removeisNeedMoreOpenOnce() -> Void {
+        UserDefaults.standard.removeObject(forKey: UserKeys.isNeedMoreOpenOnce.rawValue)
+    }
 
 
     
@@ -278,6 +310,10 @@ enum UserKeys:String {
     case longitude = "longitude"
     case KeepMeLogin = "KeepMeLogin"
     case chatToken = "chatToken"
+    case isTimeExtend = "isTimeExtend"
+    case isNeedMoreOpenOnce = "isNeedMoreOpenOnce"
     case isprofilecomplete = "is_profile_complete"
+    
+    
 }
  

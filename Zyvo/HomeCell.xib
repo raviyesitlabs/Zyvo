@@ -209,6 +209,7 @@
                 <outlet property="CollecV" destination="3Ky-fP-BJL" id="uUd-pG-KrZ"/>
                 <outlet property="btnCross" destination="xyU-NY-Ufg" id="9xD-bW-xGj"/>
                 <outlet property="btnHeart" destination="NY1-vL-kBc" id="Eza-Nb-SAB"/>
+                <outlet property="btnInstantBook" destination="jue-QS-2Cz" id="HLm-66-Lnu"/>
                 <outlet property="imgBookMark" destination="wfu-ZU-1pH" id="Sbi-ob-qJ7"/>
                 <outlet property="lbl_Distance" destination="ODh-8W-nT8" id="LvS-hj-J24"/>
                 <outlet property="lbl_NumberOfUser" destination="Fye-1n-XcU" id="hQV-6D-dbD"/>

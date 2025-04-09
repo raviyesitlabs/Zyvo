@@ -50,6 +50,37 @@ class QuickstartConversationsManager: NSObject, TwilioConversationsClientDelegat
         }
     }
     
+    func lastReadTime(conversation: TCHConversation, identity: String)-> String {
+        guard let participant = conversation.participant(withIdentity: identity) else {
+            print("Participant with identity \(identity) not found in conversation.")
+            return ""
+        }
+     var lastSeenDate1 = ""
+        if let lastSeenTimestamp = participant.lastReadTimestamp {
+            print(lastSeenTimestamp,"lastSeenTimestamp")
+            let lastSeenDate = getFormattedLastSeen(timestamp: lastSeenTimestamp) // Convert to readable date
+            //delegate?.onlineOffline(lastSeenDate)
+            print("Last seen at: \(lastSeenDate)")
+            lastSeenDate1 = lastSeenDate
+        }
+        return   lastSeenDate1
+    }
+
+    // Helper function to format timestamp into a readable date string
+    private func getFormattedLastSeen(timestamp: String) -> String {
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withInternetDateTime]
+
+        guard let date = dateFormatter.date(from: timestamp) else {
+            return "Invalid timestamp"
+        }
+
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return outputFormatter.string(from: date)
+    }
+
+    
     func conversationsClient(_ client: TwilioConversationsClient, synchronizationStatusUpdated status: TCHClientSynchronizationStatus) {
         guard status == .completed else { return }
         delegate?.getClient(client: client)
@@ -64,6 +95,7 @@ class QuickstartConversationsManager: NSObject, TwilioConversationsClientDelegat
             if success, let conversation = conversation {
                 self.joinConversation(conversation)
                 self.addParticipantToConversation()
+                
             }
         }
        
@@ -109,6 +141,7 @@ class QuickstartConversationsManager: NSObject, TwilioConversationsClientDelegat
         conversation.addParticipant(byIdentity: friendIdentity, attributes: nil) { result in
             if result.isSuccessful {
                 print("Participant added.")
+                
             } else {
                 print(result.error?.localizedDescription ?? "Unknown error")
                 print("Failed to add participant.")
@@ -225,13 +258,65 @@ class QuickstartConversationsManager: NSObject, TwilioConversationsClientDelegat
         }
     }
     
+    func conversationsClient(_ client: TwilioConversationsClient, conversation: TCHConversation, participantJoined participant: TCHParticipant) {
+        print("\(participant.identity ?? "Unknown") joined the conversation.")
+        delegate?.displayStatusMessage("\(participant.identity ?? "Unknown") joined the chat.")
+    }
+
+    func conversationsClient(_ client: TwilioConversationsClient, conversation: TCHConversation, participantLeft participant: TCHParticipant) {
+        print("\(participant.identity ?? "Unknown") left the conversation.")
+        delegate?.displayStatusMessage("\(participant.identity ?? "Unknown") left the chat.")
+    }
+    
+    
+
+    func conversationsClient(_ client: TwilioConversationsClient, conversation: TCHConversation, participant: TCHParticipant, updated update: TCHParticipantUpdate) {
+        print("\(participant.identity ?? "Unknown") updated: \(update)")
+    }
+    
     // MARK: - Cleanup
     func shutdown() {
         client?.delegate = nil
         client?.shutdown()
         client = nil
     }
+    
+    func checkTwilioUserStatus(userId: String, completion: @escaping (String) -> Void) {
+        guard let client = client else {
+            completion("Twilio client not available")
+            return
+        }
+        
+        client.subscribedUser(withIdentity: userId) { result, user in
+            if result.isSuccessful, let user = user {
+                if user.isOnline() {
+                    completion("\(user.identity) is Online")
+                } else {
+                    completion("\(user.identity) is offline")
+                    print( user.attributes())
+                    if let attributes = user.attributes() as? [String: Any],
+                       let lastUpdated = attributes["lastUpdated"] as? String {
+                        print("User last updated at: \(lastUpdated)")
+                    }
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                   // let lastSeenStr = formatter.string(from: lastSeen)
+                    
+                   // completion("\(user.identity) was last seen at \(lastSeenStr)")
+                }
+            } else {
+                let errorMessage = result.error?.localizedDescription ?? "Unknown error"
+                completion("Error fetching user: \(errorMessage)")
+            }
+        }
+    }
+
+    
+
 }
+
+
+
 struct ChatMessage {
     var text: String?
     var imageUrl: String?

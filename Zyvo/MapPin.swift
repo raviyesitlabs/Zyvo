@@ -10,16 +10,22 @@ import UIKit
 class MapPin: UIView {
 
     @IBOutlet weak var lbl_Price: UILabel!
-    var viewData:MapData?{
-        didSet{
-            upateView()
-        }
-    }
-    func upateView(){
-      
-        self.lbl_Price.text = "$\(viewData?.hourly_rate ?? "")/h"
+    
+     var isUpdated = false
+//    var viewData:MapData?{
+//        didSet{
+//          //  upateView()
+//        }
+//    }
+    
+    func updateView(price: String) {
+         guard !isUpdated else { return } // Prevent multiple updates
+         isUpdated = true
+         print("$\(price)/h", "Updating label")
+         lbl_Price.text = "$\(price)/h"
+     }
+    
 
-    }
-       
+    
     
 }

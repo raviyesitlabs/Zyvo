@@ -137,6 +137,18 @@ class ExtraTimeExtentionVC: UIViewController {
     private var viewModel2 = ExtraTimeViewModel()
     
     
+    var hostID = 0
+    var channelName = ""
+    
+    private var viewModel1 = BookingDetailsViewModel()
+    
+    var getJoinChannelDetails : JoinChanelModel?
+    
+    var hostProfileImg = ""
+    
+    var guestProfileImg = ""
+    
+    
     var getCardArr : [Card]?
     
     var card_id = ""
@@ -145,11 +157,22 @@ class ExtraTimeExtentionVC: UIViewController {
     
     var indx : Int? = 0
     
+    var ComingFrom = ""
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         bindVC()
+        
+        let guestID = Int(UserDetail.shared.getUserId())
+        let hostID = self.hostID
+        
+        let id1 = min(guestID ?? 0 , hostID)
+        let id2 = max(guestID ?? 0, hostID)
+        
+        self.channelName = "ZYVOOPROJ_\(id1)_\(id2)_\(self.property_id)"
+        print(self.channelName,"self.channelName")
+        print(id1,id2,self.propertyID,"ASDFASDF")
         
         viewModel.apiForGetSavedCard()
         print(zyvoServiceFeePercentage ?? 0.0,"zyvoServiceFeePercentage")
@@ -453,7 +476,11 @@ class ExtraTimeExtentionVC: UIViewController {
     }
     
     @IBAction func btnSendMessageHost_Tap(_ sender: UIButton) {
-        viewHold_MessageHost.isHidden = true
+        
+        let senderID = UserDetail.shared.getUserId()
+        viewModel1.apiForJoinChannel(senderId: senderID, receiverId: "\(self.hostID )", groupChannel: self.channelName, userType: "guest")
+        
+      //  viewHold_MessageHost.isHidden = true
     }
     
     @IBAction func btnParking_Tap(_ sender: UIButton) {
@@ -491,7 +518,6 @@ class ExtraTimeExtentionVC: UIViewController {
         self.navigationController?.popViewController(animated: true)
     }
     
-    
     @IBAction func btnAddNewCard_Tap(_ sender: UIButton) {
         let vc = self.storyboard?.instantiateViewController(withIdentifier: "AddCardVC") as! AddCardVC
         self.present(vc, animated: true)
@@ -516,7 +542,7 @@ class ExtraTimeExtentionVC: UIViewController {
     }
     
     @IBAction func btnShowMessageHost_Tap(_ sender: UIButton) {
-        
+        viewModel1
         viewHold_MessageHost.isHidden = false
         
     }
@@ -550,9 +576,12 @@ class ExtraTimeExtentionVC: UIViewController {
         }  else if self.getCardArr?.count == 1 {
             self.card_id = self.getCardArr?[0].cardID ?? ""
             
-            viewModel2.cardID = self.card_id
             viewModel2.customer_id =  self.customerID
+            viewModel2.service_fee =  "\(self.zyvoServiceFee ?? 0.0)"
+            viewModel2.discount_amount =  "\(self.DiscountAmount ?? 0.0)"
+            viewModel2.tax =  "\(self.taxAmount ?? 0.0)"
             viewModel2.apiForGetExtraTime(BookingID: self.bookingID)
+            
         }
         else {
             if let preferredCardID = getCardArr?.compactMap({ $0.isPreferred == true ? $0.cardID : nil }).first {
@@ -610,12 +639,45 @@ extension ExtraTimeExtentionVC {
     
     func bindVC(){
         
+        viewModel1.$getJoinChannelResult
+                  .receive(on: DispatchQueue.main)
+                  .sink { [weak self] result in
+                      guard let self = self else{return}
+                      result?.handle(success: { response in
+                          
+                          self.getJoinChannelDetails = response.data
+                          
+                          var senderID =  self.getJoinChannelDetails?.senderID ?? ""
+                          var receiverID =  self.getJoinChannelDetails?.receiverID ?? ""
+                          
+                          let guestIMG = self.getJoinChannelDetails?.senderAvatar ?? ""
+                          self.guestProfileImg = AppURL.imageURL + guestIMG
+                          
+                          let HostIMG = self.getJoinChannelDetails?.receiverAvatar ?? ""
+                          self.hostProfileImg = AppURL.imageURL + HostIMG
+                          
+                          let stryB = UIStoryboard(name: "Chat", bundle: nil)
+                          if let vc = stryB.instantiateViewController(withIdentifier: "ChatVC") as? ChatVC {
+                          vc.uniqueConversationName = self.channelName
+                          vc.SenderID = senderID
+                          vc.friend_id = "\(receiverID)"
+                          vc.guestName = self.getJoinChannelDetails?.senderName ?? ""
+                          vc.hostProfileImg = self.hostProfileImg
+                          vc.guesttProfileImg =  self.guestProfileImg
+                          self.tabBarController?.tabBar.isHidden = true
+                          vc.hidesBottomBarWhenPushed = true
+                          self.navigationController?.pushViewController(vc, animated: true)
+                          }
+                          
+                      })
+                  }.store(in: &cancellables)
+        
         viewModel.$getCardResult
             .receive(on: DispatchQueue.main)
             .sink { [weak self] result in
                 guard let self = self else{return}
                 result?.handle(success: { response in
-                    // let to = response.data?.token
+                   
                     print(response.message ?? "")
                     
                     self.getCardArr = response.data?.cards
@@ -648,8 +710,11 @@ extension ExtraTimeExtentionVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    
+                    if self.ComingFrom == "Discover" {
+                        UserDetail.shared.setisTimeExtend("Yes")
+                    }
                     self.tabBarController?.selectedIndex = 2
-                    //self.navigationController?.popViewController(animated: true)
                 })
             }.store(in: &cancellables)
         

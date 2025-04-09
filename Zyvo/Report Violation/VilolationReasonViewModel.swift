@@ -16,6 +16,8 @@ class VilolationReasonViewModel :NSObject{
     @Published var getVilolationResult:Result<BaseResponse<[VilolationReasonModel]>,Error>? = nil
     @Published var getSubmitReportResult:Result<BaseResponse<EmptyModel>,Error>? = nil
     
+    @Published var getSubmitChatReportResult:Result<BaseResponse<EmptyModel>,Error>? = nil
+    
     //@Published var getDeleteAccountResult:Result<BaseResponse<DeleteAccountModel>,Error>? = nil
   
   
@@ -75,6 +77,36 @@ extension VilolationReasonViewModel {
                        self.getSubmitReportResult = .success(response)
                    }else {
                        topViewController?.showAlert(for: response.message ?? "")
+                   }
+               }.store(in: &cancellables)
+           
+       }
+    
+    
+    func apiForSubmitChatReport(reporter_id: String,reported_user_id: String,reason: String,message:String){
+           var para = [String:Any]()
+        
+           para[APIKeys.reporter_id] = reporter_id
+           para[APIKeys.reported_user_id] = reported_user_id
+           para[APIKeys.reason] = reason
+           para[APIKeys.message] = message
+         
+           APIServices<EmptyModel>().post(endpoint: .report_chat, parameters: para,loader: true)
+               .receive(on: DispatchQueue.main)
+               .sink { complition in
+                   switch complition{
+                   case .finished :
+                       print("Successfully fetched.....")
+                   case .failure(let error) :
+                       self.getSubmitChatReportResult = .failure(error)
+                   }
+               } receiveValue: { response in
+                   if response.success ?? false {
+                       self.getSubmitChatReportResult = .success(response)
+                   }else {
+                       self.getSubmitChatReportResult = .success(response)
+                       
+                       //topViewController?.showAlert(for: response.message ?? "")
                    }
                }.store(in: &cancellables)
            

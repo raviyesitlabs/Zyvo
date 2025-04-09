@@ -9,10 +9,13 @@ import UIKit
 import Combine
 import CoreLocation
 
-@available(iOS 14.0, *)
+
+
+
 class DiscoverVC: UIViewController,LocationPickerDelegate {
-    
+    //private let progressBar = SemiCircleProgressBar()
     @IBOutlet weak var lbl_seconds: UILabel!
+    @IBOutlet weak var stackV_TimeLeft: UIStackView!
     @IBOutlet weak var lbl_minutes: UILabel!
     @IBOutlet weak var lbl_hours: UILabel!
     @IBOutlet weak var collecV: UICollectionView!
@@ -26,10 +29,14 @@ class DiscoverVC: UIViewController,LocationPickerDelegate {
     private var viewModel = HomeDataViewModel()
     
     var comingFrom = ""
+    
+   
     //FilterData
     var timess: Int = 0
     
-    
+    var startDates: Date?
+    var endDates: Date?
+    var isCountingUp = false
     var startTime = ""
     var endTime = ""
     var propertyID = ""
@@ -76,34 +83,59 @@ class DiscoverVC: UIViewController,LocationPickerDelegate {
     
     var getUserBookingPropertyArr : [UserProperty]?
    
-    let dateTimer = CurrentDateTimer()
+   // let dateTimer = CurrentDateTimer()
     
     let calculator = TimeDifferenceCalculator()
     
+    var lat = ""
+    var lng = ""
+    
+   // var progressBar = SemiCircleProgressBar()
+    var progressBar: SemiCircleProgressBar?
     override func viewDidLoad() {
         super.viewDidLoad()
         
-      //  APIManager.shared.apiforGetChatToken(role: "guest") { t in }
         
-        view_RemainingTime.isHidden = true
+//        if let mainTabVC = self.tabBarController as? MainTabVC {
+//            mainTabVC.progressBar?.isHidden = true
+//            // mainTabVC.progressBar = nil
+//        }
+        
+       
+//        
+//        if let tabBarView = tabBarController?.view {
+//            progressBar.translatesAutoresizingMaskIntoConstraints = false
+//            tabBarView.addSubview(progressBar)
+//            progressBar.animationDuration = 30.0
+//
+//            NSLayoutConstraint.activate([
+//                progressBar.leadingAnchor.constraint(equalTo: tabBarView.leadingAnchor),
+//                progressBar.trailingAnchor.constraint(equalTo: tabBarView.trailingAnchor),
+//                progressBar.bottomAnchor.constraint(equalTo: tabBarView.safeAreaLayoutGuide.bottomAnchor, constant: -50),
+//                progressBar.heightAnchor.constraint(equalToConstant: 190)
+//            ])
+//       }
+
+ 
+      // APIManager.shared.apiforGetChatToken(role: "guest") { t in }
+        
+        viewModel.apiforGetChatToken(role: "guest")
+        
+       // view_RemainingTime.isHidden = false
         
         LocationPicker.shared.delegate = self
         LocationPicker.shared.checkLocationPermission()
-
         NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
-        
         bindVC()
         
-//        dateTimer.startTimer { currentDate, currentDateTime in
-//            print("Current Date: \(currentDate) | Current Date and Time: \(currentDateTime)")
+        CurrentDateTimer.shared.startTimer { currentDate, currentDateTime in
+            print("Current Date: \(currentDate) | Current Date and Time: \(currentDateTime)")
             
-            self.viewModel.bookingStart =  "2025-03-19 15:12:59"//"\(currentDateTime)"
-            self.viewModel.bookingDate = "2025-03-19"//"\(currentDate)"
+            self.viewModel.bookingStart = "\(currentDateTime)"
+            self.viewModel.bookingDate = "\(currentDate)"
             self.viewModel.apiforGetBookedPropertyTimer()
-        //}
+        }
       
-       
-        
         view_Search.layer.borderWidth = 1.5
         view_Search.layer.borderColor = UIColor.init(red: 229/255, green: 229/255, blue: 229/255, alpha: 1).cgColor
         view_Search.layer.cornerRadius = view_Search.layer.frame.height / 2
@@ -117,13 +149,54 @@ class DiscoverVC: UIViewController,LocationPickerDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         
+        let isTimeExtend = UserDetail.shared.getisTimeExtend()
+        if isTimeExtend == "Yes" {
+            CurrentDateTimer.shared.startTimer { currentDate, currentDateTime in
+                print("Current Date: \(currentDate) | Current Date and Time: \(currentDateTime)")
+                self.viewModel.bookingStart = "\(currentDateTime)"
+                self.viewModel.bookingDate = "\(currentDate)"
+                self.viewModel.apiforGetBookedPropertyTimer()
+            }
+        }
+        
         if comingFrom == "" {
             self.viewModel.apiforGetHomeData()
         }
        
         self.tabBarController?.tabBar.isHidden = false
         
+//        if let mainTabVC = self.tabBarController as? MainTabVC {
+//            mainTabVC.progressBar?.isHidden = true
+//            mainTabVC.newProgressBar.isHidden = true
+//          
+//        }
+        
+//        // Show only if current tab is index 0
+//          if let index = self.tabBarController?.selectedIndex, index == 0 {
+//              if progressBar == nil {
+//                  let bar = SemiCircleProgressBar()
+//                  bar.translatesAutoresizingMaskIntoConstraints = false
+//                  bar.animationDuration = 30.0
+//                  progressBar = bar
+//                  
+//                  if let tabBarView = self.tabBarController?.view {
+//                      tabBarView.addSubview(bar)
+//                      NSLayoutConstraint.activate([
+//                          bar.leadingAnchor.constraint(equalTo: tabBarView.leadingAnchor),
+//                          bar.trailingAnchor.constraint(equalTo: tabBarView.trailingAnchor),
+//                          bar.bottomAnchor.constraint(equalTo: tabBarView.safeAreaLayoutGuide.bottomAnchor, constant: -50),
+//                          bar.heightAnchor.constraint(equalToConstant: 190)
+//                      ])
+//                  }
+//              } else {
+//                  progressBar?.isHidden = false
+//              }
+//          } else {
+//              progressBar?.isHidden = true
+//          }
+        
     }
+    
     @objc func appDidBecomeActive() {
         // When the app returns from settings, check location again
         LocationPicker.shared.checkLocationPermission()
@@ -132,6 +205,8 @@ class DiscoverVC: UIViewController,LocationPickerDelegate {
     // MARK: - LocationManagerHelperDelegate Methods
     func didUpdateLocation(latitude: Double, longitude: Double) {
         print("Latitude: \(latitude), Longitude: \(longitude)")
+        self.lat = "\(latitude)"
+        self.lng = "\(longitude)"
         self.viewModel.latitude = "\(latitude)"
         self.viewModel.longitude = "\(longitude)"
         self.viewModel.apiforGetHomeData()
@@ -165,174 +240,176 @@ class DiscoverVC: UIViewController,LocationPickerDelegate {
                   //  Print remaining time continuously
                 //  print("Remaining Time: \(hours) hours, \(minutes) minutes, \(seconds) seconds")
                   
-                  // Show popup when exactly 30 minutes remaining
+               // Show popup when exactly 30 minutes remaining
+         
             
-            if hours == 0, minutes == 30, seconds == 0 {
-                
-                let vc = self.storyboard?.instantiateViewController(withIdentifier: "NeedMoreTimePopUpVC") as! NeedMoreTimePopUpVC
-                vc.backAction = { str in
-                    print(str,"Data Recieved")
-                    if str == "Yes" {
-                        let vc = self.storyboard?.instantiateViewController(withIdentifier: "AddMoreTimePopUpVC") as! AddMoreTimePopUpVC
-                        vc.perHourRate = self.perHourRate ?? 0
-                        vc.backAction = {  str, str2 in
+            var isNeedMoreOpenOnce = UserDetail.shared.getisNeedMoreOpenOnce()
+          
+                if hours == 0, minutes <= 30, seconds == 0 {
+                    let isTimeExtend = UserDetail.shared.getisTimeExtend()
+                    if isNeedMoreOpenOnce != "No" {
+                    if isTimeExtend == "No" {
+                        let vc = self.storyboard?.instantiateViewController(withIdentifier: "NeedMoreTimePopUpVC") as! NeedMoreTimePopUpVC
+                        vc.backAction = { str in
+                            print(str,"Data Recieved")
                             
-                            print(str,str2,"dataReceived")
-                            self.booking_hours = str
-                            self.booking_amount =  Double(str2) ?? 0.0
-                            self.DiscountPercentage = Double(self.getUserBookingPropertyArr?[0].bulkDiscountRate ?? "")
-                            self.taxPercentage = Double(self.getUserBookingPropertyArr?[0].tax ?? "")
-                            self.bookingID = ("\(self.getBookingArr?[0].bookingID ?? 0)")
-                            self.hostName = self.getUserBookingPropertyArr?[0].hostedBy ?? ""
-                            self.propertyName = self.getUserBookingPropertyArr?[0].propertyTitle ?? ""
-                            
-                           
-                            self.propertyRating = self.getUserBookingPropertyArr?[0].reviewsTotalRating ?? ""
-                            self.propertyNumberofReview = "(\(self.getUserBookingPropertyArr?[0].reviewsTotalCount ?? "") reviews)"
-                            
-                            var image = self.getUserBookingPropertyArr?[0].hostProfileImage ?? ""
-                            let imgURL = AppURL.imageURL + image
-                            self.profileIMGURL = imgURL
-                            
-                            self.StartDatetime = self.getBookingArr?[0].bookingStart ?? ""
-                            self.EndDatetime = self.getBookingArr?[0].bookingEnd ?? ""
-                            self.booking_date = self.getBookingArr?[0].bookingDate ?? ""
-                            self.property_id = "\(self.getUserBookingPropertyArr?[0].propertyID ?? 0)"
-                            self.parkDesc = "\(self.getUserBookingPropertyArr?[0].parkingRules ?? "")"
-                            self.HostingRulesDesc = "\(self.getUserBookingPropertyArr?[0].hostRules ?? "")"
-                           
-                            let cleaningFees = self.getUserBookingPropertyArr?[0].cleaningFee ?? ""
-                            if let doubleValue = Double(cleaningFees) {
-                                self.ClearningFee = doubleValue
-                                print(self.ClearningFee ?? 0.0,"ClearningFee") // Output: 10
-                            }
-                            
-                           // let zyvoFeePercentage = Double(self.getUserBookingPropertyArr?[0].serviceFee ?? "0.0") ?? 0.0
-                           // self.zyvoServicePercentage = zyvoFeePercentage
-                           
-                            
-                            
-                            let zyvoServiceFees = self.getUserBookingPropertyArr?[0].serviceFee ?? ""
-                            if let doubleValue = Double(zyvoServiceFees) {
-                                
-                                self.zyvoServiceFee = ((self.booking_amount ?? 0.0) * doubleValue) / 100.0
-                               // self.zyvoServiceFee = doubleValue
-                                print(self.zyvoServiceFee ?? 0.0,"zyvoServiceFee") // Output: 10
-                            }
-                            if let addonPrices = self.getBookingArr?.first?.totalAddonPrice {
-                                if let doubleValue = Double("\(addonPrices)") {
-                                    self.AddonOnsPrice = doubleValue
-                                    print(self.AddonOnsPrice ?? 0, "AddonOnsPrice") // Output: 10.0
+                            if str == "Yes" {
+                                let vc = self.storyboard?.instantiateViewController(withIdentifier: "AddMoreTimePopUpVC") as! AddMoreTimePopUpVC
+                                vc.perHourRate = self.perHourRate ?? 0
+                                vc.backAction = {  str, str2 in
+                                    print(str,str2,"dataReceived")
+                                    self.booking_hours = str
+                                    self.booking_amount =  Double(str2) ?? 0.0
+                                    self.DiscountPercentage = Double(self.getUserBookingPropertyArr?[0].bulkDiscountRate ?? "")
+                                    self.taxPercentage = Double(self.getUserBookingPropertyArr?[0].tax ?? "")
+                                    self.bookingID = ("\(self.getBookingArr?[0].bookingID ?? 0)")
+                                    self.hostName = self.getUserBookingPropertyArr?[0].hostedBy ?? ""
+                                    self.propertyName = self.getUserBookingPropertyArr?[0].propertyTitle ?? ""
+                                    
+                                    
+                                    self.propertyRating = self.getUserBookingPropertyArr?[0].reviewsTotalRating ?? ""
+                                    self.propertyNumberofReview = "(\(self.getUserBookingPropertyArr?[0].reviewsTotalCount ?? "") reviews)"
+                                    
+                                    var image = self.getUserBookingPropertyArr?[0].hostProfileImage ?? ""
+                                    let imgURL = AppURL.imageURL + image
+                                    self.profileIMGURL = imgURL
+                                    
+                                    self.StartDatetime = self.getBookingArr?[0].bookingStart ?? ""
+                                    self.EndDatetime = self.getBookingArr?[0].bookingEnd ?? ""
+                                    self.booking_date = self.getBookingArr?[0].bookingDate ?? ""
+                                    self.property_id = "\(self.getUserBookingPropertyArr?[0].propertyID ?? 0)"
+                                    self.parkDesc = "\(self.getUserBookingPropertyArr?[0].parkingRules ?? "")"
+                                    self.HostingRulesDesc = "\(self.getUserBookingPropertyArr?[0].hostRules ?? "")"
+                                    
+                                    let cleaningFees = self.getUserBookingPropertyArr?[0].cleaningFee ?? ""
+                                    if let doubleValue = Double(cleaningFees) {
+                                        self.ClearningFee = doubleValue
+                                        print(self.ClearningFee ?? 0.0,"ClearningFee") // Output: 10
+                                    }
+                                    
+                                    let zyvoServiceFees = self.getUserBookingPropertyArr?[0].serviceFee ?? ""
+                                    if let doubleValue = Double(zyvoServiceFees) {
+                                        self.zyvoServicePercentage = doubleValue
+                                        self.zyvoServiceFee = ((self.booking_amount ?? 0.0) * doubleValue) / 100.0
+                                        // self.zyvoServiceFee = doubleValue
+                                        print(self.zyvoServiceFee ?? 0.0,"zyvoServiceFee") // Output: 10
+                                    }
+                                    if let addonPrices = self.getBookingArr?.first?.totalAddonPrice {
+                                        if let doubleValue = Double("\(addonPrices)") {
+                                            self.AddonOnsPrice = doubleValue
+                                            print(self.AddonOnsPrice ?? 0, "AddonOnsPrice") // Output: 10.0
+                                        }
+                                    }
+                                    
+                                    if let propertySize = self.getUserBookingPropertyArr?.first?.propertySize {
+                                        self.propertyDistanceInMiles = "\(propertySize)"
+                                        print(self.propertyDistanceInMiles , "propertyDistanceInMiles") // Output: 10.0
+                                    }
+                                    
+                                    
+                                    let bookingStart = self.getBookingArr?.first?.bookingStart ?? ""
+                                    let dateFormatter = DateFormatter()
+                                    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                                    dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+                                    
+                                    if let date = dateFormatter.date(from: bookingStart) {
+                                        dateFormatter.dateFormat = "hh:mm a"
+                                        let formattedTime = dateFormatter.string(from: date)
+                                        self.startTime = formattedTime
+                                        print(formattedTime) // Output: 03:12 PM
+                                    }
+                                    
+                                    let bookingEnd = self.getBookingArr?.first?.bookingEnd ?? ""
+                                    
+                                    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                                    dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+                                    
+                                    if let date = dateFormatter.date(from: bookingEnd) {
+                                        dateFormatter.dateFormat = "hh:mm a"
+                                        let formattedTime = dateFormatter.string(from: date)
+                                        self.endTime = formattedTime
+                                        print(formattedTime) // Output: 03:12 PM
+                                    }
+                                    
+                                    self.addOnsArr = self.getUserBookingPropertyArr?[0].addOns ?? []
+                                    
+                                    print(self.booking_hours ?? 0,self.booking_amount ?? 0.0,"self.booking_hours,self.booking_amount")
+                                    
+                                    let vc = self.storyboard?.instantiateViewController(withIdentifier: "ExtraTimeExtentionVC") as! ExtraTimeExtentionVC
+                                    
+                                    if (self.booking_hours ?? 0) > (self.minBookhours ?? 0) {
+                                        let result = self.calculateFinalPriceWithDiscount(totalPrice: self.booking_amount ?? 0.0, discountPercent: self.DiscountPercentage ?? 0.0, taxPercent: self.taxPercentage ?? 0.0)
+                                        print("================================WithDiscount====================================")
+                                        // Printing the Result
+                                        print("Total Price: \(result.totalPrice)")
+                                        print("Discount Amount (\(String(describing: self.DiscountPercentage))%) : \(result.discountAmount)")
+                                        print("Discounted Price: \(result.discountedPrice)")
+                                        print("Tax Amount (\(String(describing: self.taxPercentage ?? 0.0))%): \(result.taxAmount )")
+                                        self.taxAmount = result.taxAmount
+                                        self.DiscountAmount = result.discountAmount
+                                        print("Final Price: \(result.finalPrice)")
+                                        
+                                    } else {
+                                        let result = self.calculateFinalPriceWithoutDiscount(totalPrice: self.booking_amount ?? 0.0, taxPercent: self.taxPercentage ?? 0.0)
+                                        
+                                        print("================================WithoutDiscount====================================")
+                                        print("Tax Amount: \(result.taxAmount)")
+                                        self.taxAmount = result.taxAmount// 45.0
+                                        self.DiscountAmount = 0.0
+                                        print("Final Price After Tax: \(result.finalPrice)") // 945.0
+                                    }
+                                    vc.bookingID = ("\(self.getBookingArr?[0].bookingID ?? 0)")
+                                    vc.startTime = self.startTime
+                                    vc.endTime = self.endTime
+                                    vc.hostName = self.hostName
+                                    vc.propertyDistanceInMiles = self.propertyDistanceInMiles
+                                    vc.propertyName = self.propertyName
+                                    vc.propertyRating = self.propertyRating
+                                    vc.propertyNumberofReview =  self.propertyNumberofReview
+                                    vc.propertyIMGURL =  self.propertyIMGURL
+                                    vc.perHourRate = self.perHourRate
+                                    vc.booking_start = self.StartDatetime
+                                    vc.booking_end = self.EndDatetime
+                                    vc.booking_hours = self.booking_hours ?? 0
+                                    vc.booking_amount = self.booking_amount
+                                    vc.property_id = self.property_id
+                                    vc.booking_date = self.booking_date
+                                    //vc.addOnsNeddToSend = self.addOnsNeddToSend
+                                    vc.taxAmount =  self.taxAmount
+                                    vc.minBookhours = self.minBookhours
+                                    vc.DiscountAmount = self.DiscountAmount
+                                    vc.ClearningFee = (self.ClearningFee ?? 0.0)
+                                    vc.zyvoServiceFee = self.zyvoServiceFee ?? 0.0
+                                    vc.AddonOnsPrice = self.AddonOnsPrice ?? 0.0
+                                    vc.addOnsArr = self.addOnsArr
+                                    vc.arrSelectedArr = self.arrSelectedArr
+                                    vc.profileIMGURL = self.profileIMGURL
+                                    vc.parkDesc = self.parkDesc
+                                    vc.HostingRulesDesc = self.HostingRulesDesc
+                                    vc.DiscountPercentage = self.DiscountPercentage
+                                    vc.taxPercentage = self.taxPercentage
+                                    
+                                    print(self.zyvoServicePercentage ?? 0.0,"zyvoServicePercentage")
+                                    
+                                    vc.zyvoServiceFeePercentage = self.zyvoServicePercentage
+                                    
+                                    self.navigationController?.pushViewController(vc, animated: true)
+                                    
                                 }
-                            }
-                            
-                            if let propertySize = self.getUserBookingPropertyArr?.first?.propertySize {
-                                self.propertyDistanceInMiles = "\(propertySize)"
-                                print(self.propertyDistanceInMiles , "propertyDistanceInMiles") // Output: 10.0
-                            }
-                            
-                            
-                            let bookingStart = self.getBookingArr?.first?.bookingStart ?? ""
-                            let dateFormatter = DateFormatter()
-                            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-
-                            if let date = dateFormatter.date(from: bookingStart) {
-                                dateFormatter.dateFormat = "hh:mm a"
-                                let formattedTime = dateFormatter.string(from: date)
-                                self.startTime = formattedTime
-                                print(formattedTime) // Output: 03:12 PM
-                            }
-                            
-                            let bookingEnd = self.getBookingArr?.first?.bookingEnd ?? ""
-                           
-                            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-
-                            if let date = dateFormatter.date(from: bookingEnd) {
-                                dateFormatter.dateFormat = "hh:mm a"
-                                let formattedTime = dateFormatter.string(from: date)
-                                self.endTime = formattedTime
-                                print(formattedTime) // Output: 03:12 PM
-                            }
-                            
-                            self.addOnsArr = self.getUserBookingPropertyArr?[0].addOns ?? []
-                            
-                            print(self.booking_hours ?? 0,self.booking_amount ?? 0.0,"self.booking_hours,self.booking_amount")
-                            
-                            let vc = self.storyboard?.instantiateViewController(withIdentifier: "ExtraTimeExtentionVC") as! ExtraTimeExtentionVC
-                            
-                            if (self.booking_hours ?? 0) > (self.minBookhours ?? 0) {
-                                let result = self.calculateFinalPriceWithDiscount(totalPrice: self.booking_amount ?? 0.0, discountPercent: self.DiscountPercentage ?? 0.0, taxPercent: self.taxPercentage ?? 0.0)
-                                print("================================WithDiscount====================================")
-                                // Printing the Result
-                                print("Total Price: \(result.totalPrice)")
-                                print("Discount Amount (\(String(describing: self.DiscountPercentage))%) : \(result.discountAmount)")
-                                print("Discounted Price: \(result.discountedPrice)")
-                                print("Tax Amount (\(String(describing: self.taxPercentage ?? 0.0))%): \(result.taxAmount )")
-                                self.taxAmount = result.taxAmount
-                                self.DiscountAmount = result.discountAmount
-                                print("Final Price: \(result.finalPrice)")
                                 
-                            } else {
-                                let result = self.calculateFinalPriceWithoutDiscount(totalPrice: self.booking_amount ?? 0.0, taxPercent: self.taxPercentage ?? 0.0)
-                                
-                                print("================================WithoutDiscount====================================")
-                                print("Tax Amount: \(result.taxAmount)")
-                                self.taxAmount = result.taxAmount// 45.0
-                                self.DiscountAmount = 0.0
-                                 print("Final Price After Tax: \(result.finalPrice)") // 945.0
+                                vc.modalPresentationStyle = .overFullScreen
+                                self.present(vc, animated: true)
                             }
-                            vc.bookingID = self.bookingID
-                          vc.startTime = self.startTime
-                          vc.endTime = self.endTime
-                            vc.hostName = self.hostName
-                           vc.propertyDistanceInMiles = self.propertyDistanceInMiles
-                            vc.propertyName = self.propertyName
-                            vc.propertyRating = self.propertyRating
-                            vc.propertyNumberofReview =  self.propertyNumberofReview
-                            vc.propertyIMGURL =  self.propertyIMGURL
-                            vc.perHourRate = self.perHourRate
-                            vc.booking_start = self.StartDatetime
-                            vc.booking_end = self.EndDatetime
-                            vc.booking_hours = self.booking_hours ?? 0
-                            vc.booking_amount = self.booking_amount
-                            vc.property_id = self.property_id
-                            vc.booking_date = self.booking_date
-                           //vc.addOnsNeddToSend = self.addOnsNeddToSend
-                            vc.taxAmount =  self.taxAmount
-                            vc.minBookhours = self.minBookhours
-                            vc.DiscountAmount = self.DiscountAmount
-                            vc.ClearningFee = (self.ClearningFee ?? 0.0)
-                            vc.zyvoServiceFee = self.zyvoServiceFee ?? 0.0
-                            vc.AddonOnsPrice = self.AddonOnsPrice ?? 0.0
-                            vc.addOnsArr = self.addOnsArr
-                            vc.arrSelectedArr = self.arrSelectedArr
-                            vc.profileIMGURL = self.profileIMGURL
-                            vc.parkDesc = self.parkDesc
-                            vc.HostingRulesDesc = self.HostingRulesDesc
-                            vc.DiscountPercentage = self.DiscountPercentage
-                            vc.taxPercentage = self.taxPercentage
-                            
-                            print(self.zyvoServicePercentage ?? 0.0,"zyvoServicePercentage")
-                            
-                            vc.zyvoServiceFeePercentage = self.zyvoServicePercentage
-                            
-                            self.navigationController?.pushViewController(vc, animated: true)
-                            
+                            if str == "No" {
+                                UserDetail.shared.setisNeedMoreOpenOnce("No")
                             }
-                        
+                        }
                         vc.modalPresentationStyle = .overFullScreen
                         self.present(vc, animated: true)
-                        }
                     }
-                vc.modalPresentationStyle = .overFullScreen
-                self.present(vc, animated: true)
-           
-                
+                }
             }
-            
-        } else {
+            } else {
             timer?.invalidate() // Stop the timer when it reaches zero
             print("Timer finished!")
         }
@@ -421,165 +498,172 @@ class DiscoverVC: UIViewController,LocationPickerDelegate {
     }
     @IBAction func btnExtratime_Tap(_ sender: UIButton) {
         
-        let vc = self.storyboard?.instantiateViewController(withIdentifier: "NeedMoreTimePopUpVC") as! NeedMoreTimePopUpVC
-        vc.backAction = { str in
-            print(str,"Data Recieved")
-            if str == "Yes" {
-                let vc = self.storyboard?.instantiateViewController(withIdentifier: "AddMoreTimePopUpVC") as! AddMoreTimePopUpVC
-                vc.perHourRate = self.perHourRate ?? 0
-                vc.backAction = {  str, str2 in
-                    
-                    print(str,str2,"dataReceived")
-                    self.booking_hours = str
-                    self.booking_amount =  Double(str2) ?? 0.0
-                    self.DiscountPercentage = Double(self.getUserBookingPropertyArr?[0].bulkDiscountRate ?? "")
-                    self.taxPercentage = Double(self.getUserBookingPropertyArr?[0].tax ?? "")
-                    self.bookingID = ("\(self.getBookingArr?[0].bookingID ?? 0)")
-                    self.hostName = self.getUserBookingPropertyArr?[0].hostedBy ?? ""
-                    self.propertyName = self.getUserBookingPropertyArr?[0].propertyTitle ?? ""
-                    
-                   
-                    self.propertyRating = self.getUserBookingPropertyArr?[0].reviewsTotalRating ?? ""
-                    self.propertyNumberofReview = "(\(self.getUserBookingPropertyArr?[0].reviewsTotalCount ?? "") reviews)"
-                    
-                    var image = self.getUserBookingPropertyArr?[0].hostProfileImage ?? ""
-                    let imgURL = AppURL.imageURL + image
-                    self.profileIMGURL = imgURL
-                    
-                    self.StartDatetime = self.getBookingArr?[0].bookingStart ?? ""
-                    self.EndDatetime = self.getBookingArr?[0].bookingEnd ?? ""
-                    self.booking_date = self.getBookingArr?[0].bookingDate ?? ""
-                    self.property_id = "\(self.getUserBookingPropertyArr?[0].propertyID ?? 0)"
-                    self.parkDesc = "\(self.getUserBookingPropertyArr?[0].parkingRules ?? "")"
-                    self.HostingRulesDesc = "\(self.getUserBookingPropertyArr?[0].hostRules ?? "")"
-                   
-                    let cleaningFees = self.getUserBookingPropertyArr?[0].cleaningFee ?? ""
-                    if let doubleValue = Double(cleaningFees) {
-                        self.ClearningFee = doubleValue
-                        print(self.ClearningFee ?? 0.0,"ClearningFee") // Output: 10
-                    }
-                    
-                   // let zyvoFeePercentage = Double(self.getUserBookingPropertyArr?[0].serviceFee ?? "0.0") ?? 0.0
-                   // self.zyvoServicePercentage = zyvoFeePercentage
-                   
-                    
-                    
-                    let zyvoServiceFees = self.getUserBookingPropertyArr?[0].serviceFee ?? ""
-                    if let doubleValue = Double(zyvoServiceFees) {
-                        
-                        self.zyvoServiceFee = ((self.booking_amount ?? 0.0) * doubleValue) / 100.0
-                       // self.zyvoServiceFee = doubleValue
-                        print(self.zyvoServiceFee ?? 0.0,"zyvoServiceFee") // Output: 10
-                    }
-                    if let addonPrices = self.getBookingArr?.first?.totalAddonPrice {
-                        if let doubleValue = Double("\(addonPrices)") {
-                            self.AddonOnsPrice = doubleValue
-                            print(self.AddonOnsPrice ?? 0, "AddonOnsPrice") // Output: 10.0
-                        }
-                    }
-                    
-                    if let propertySize = self.getUserBookingPropertyArr?.first?.propertySize {
-                        self.propertyDistanceInMiles = "\(propertySize)"
-                        print(self.propertyDistanceInMiles , "propertyDistanceInMiles") // Output: 10.0
-                    }
-                    
-                    
-                    let bookingStart = self.getBookingArr?.first?.bookingStart ?? ""
-                    let dateFormatter = DateFormatter()
-                    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                    dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-
-                    if let date = dateFormatter.date(from: bookingStart) {
-                        dateFormatter.dateFormat = "hh:mm a"
-                        let formattedTime = dateFormatter.string(from: date)
-                        self.startTime = formattedTime
-                        print(formattedTime) // Output: 03:12 PM
-                    }
-                    
-                    let bookingEnd = self.getBookingArr?.first?.bookingEnd ?? ""
-                   
-                    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                    dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-
-                    if let date = dateFormatter.date(from: bookingEnd) {
-                        dateFormatter.dateFormat = "hh:mm a"
-                        let formattedTime = dateFormatter.string(from: date)
-                        self.endTime = formattedTime
-                        print(formattedTime) // Output: 03:12 PM
-                    }
-                    
-                    self.addOnsArr = self.getUserBookingPropertyArr?[0].addOns ?? []
-                    
-                    print(self.booking_hours ?? 0,self.booking_amount ?? 0.0,"self.booking_hours,self.booking_amount")
-                    
-                    let vc = self.storyboard?.instantiateViewController(withIdentifier: "ExtraTimeExtentionVC") as! ExtraTimeExtentionVC
-                    
-                    if (self.booking_hours ?? 0) > (self.minBookhours ?? 0) {
-                        let result = self.calculateFinalPriceWithDiscount(totalPrice: self.booking_amount ?? 0.0, discountPercent: self.DiscountPercentage ?? 0.0, taxPercent: self.taxPercentage ?? 0.0)
-                        print("================================WithDiscount====================================")
-                        // Printing the Result
-                        print("Total Price: \(result.totalPrice)")
-                        print("Discount Amount (\(String(describing: self.DiscountPercentage))%) : \(result.discountAmount)")
-                        print("Discounted Price: \(result.discountedPrice)")
-                        print("Tax Amount (\(String(describing: self.taxPercentage ?? 0.0))%): \(result.taxAmount )")
-                        self.taxAmount = result.taxAmount
-                        self.DiscountAmount = result.discountAmount
-                        print("Final Price: \(result.finalPrice)")
-                        
-                    } else {
-                        let result = self.calculateFinalPriceWithoutDiscount(totalPrice: self.booking_amount ?? 0.0, taxPercent: self.taxPercentage ?? 0.0)
-                        
-                        print("================================WithoutDiscount====================================")
-                        print("Tax Amount: \(result.taxAmount)")
-                        self.taxAmount = result.taxAmount// 45.0
-                        self.DiscountAmount = 0.0
-                         print("Final Price After Tax: \(result.finalPrice)") // 945.0
-                    }
-                    vc.bookingID = self.bookingID
-                  vc.startTime = self.startTime
-                  vc.endTime = self.endTime
-                    vc.hostName = self.hostName
-                   vc.propertyDistanceInMiles = self.propertyDistanceInMiles
-                    vc.propertyName = self.propertyName
-                    vc.propertyRating = self.propertyRating
-                    vc.propertyNumberofReview =  self.propertyNumberofReview
-                    vc.propertyIMGURL =  self.propertyIMGURL
-                    vc.perHourRate = self.perHourRate
-                    vc.booking_start = self.StartDatetime
-                    vc.booking_end = self.EndDatetime
-                    vc.booking_hours = self.booking_hours ?? 0
-                    vc.booking_amount = self.booking_amount
-                    vc.property_id = self.property_id
-                    vc.booking_date = self.booking_date
-                   //vc.addOnsNeddToSend = self.addOnsNeddToSend
-                    vc.taxAmount =  self.taxAmount
-                    vc.minBookhours = self.minBookhours
-                    vc.DiscountAmount = self.DiscountAmount
-                    vc.ClearningFee = (self.ClearningFee ?? 0.0)
-                    vc.zyvoServiceFee = self.zyvoServiceFee ?? 0.0
-                    vc.AddonOnsPrice = self.AddonOnsPrice ?? 0.0
-                    vc.addOnsArr = self.addOnsArr
-                    vc.arrSelectedArr = self.arrSelectedArr
-                    vc.profileIMGURL = self.profileIMGURL
-                    vc.parkDesc = self.parkDesc
-                    vc.HostingRulesDesc = self.HostingRulesDesc
-                    vc.DiscountPercentage = self.DiscountPercentage
-                    vc.taxPercentage = self.taxPercentage
-                    
-                    print(self.zyvoServicePercentage ?? 0.0,"zyvoServicePercentage")
-                    
-                    vc.zyvoServiceFeePercentage = self.zyvoServicePercentage
-                    
-                    self.navigationController?.pushViewController(vc, animated: true)
-                    
-                    }
+        var isNeedMoreOpenOnce = UserDetail.shared.getisNeedMoreOpenOnce()
+        
+        if isNeedMoreOpenOnce == "No"  {
+            
+            let vc = self.storyboard?.instantiateViewController(withIdentifier: "NeedMoreTimePopUpVC") as! NeedMoreTimePopUpVC
+            vc.backAction = { str in
+                if str == "Yes" {
+                    UserDetail.shared.setisNeedMoreOpenOnce("No")
+                }
                 
-                vc.modalPresentationStyle = .overFullScreen
-                self.present(vc, animated: true)
+                print(str,"Data Recieved")
+                if str == "Yes" {
+                    let vc = self.storyboard?.instantiateViewController(withIdentifier: "AddMoreTimePopUpVC") as! AddMoreTimePopUpVC
+                    
+                    vc.perHourRate = self.perHourRate ?? 0
+                    vc.backAction = {  str, str2 in
+                        
+                        print(str,str2,"dataReceived")
+                        self.booking_hours = str
+                        self.booking_amount =  Double(str2) ?? 0.0
+                        self.DiscountPercentage = Double(self.getUserBookingPropertyArr?[0].bulkDiscountRate ?? "")
+                        self.taxPercentage = Double(self.getUserBookingPropertyArr?[0].tax ?? "")
+                        self.bookingID = ("\(self.getBookingArr?[0].bookingID ?? 0)")
+                        self.hostName = self.getUserBookingPropertyArr?[0].hostedBy ?? ""
+                        self.propertyName = self.getUserBookingPropertyArr?[0].propertyTitle ?? ""
+                        
+                        
+                        self.propertyRating = self.getUserBookingPropertyArr?[0].reviewsTotalRating ?? ""
+                        self.propertyNumberofReview = "(\(self.getUserBookingPropertyArr?[0].reviewsTotalCount ?? "") reviews)"
+                        
+                        var image = self.getUserBookingPropertyArr?[0].hostProfileImage ?? ""
+                        let imgURL = AppURL.imageURL + image
+                        self.profileIMGURL = imgURL
+                        
+                        self.StartDatetime = self.getBookingArr?[0].bookingStart ?? ""
+                        self.EndDatetime = self.getBookingArr?[0].bookingEnd ?? ""
+                        self.booking_date = self.getBookingArr?[0].bookingDate ?? ""
+                        self.property_id = "\(self.getUserBookingPropertyArr?[0].propertyID ?? 0)"
+                        self.parkDesc = "\(self.getUserBookingPropertyArr?[0].parkingRules ?? "")"
+                        self.HostingRulesDesc = "\(self.getUserBookingPropertyArr?[0].hostRules ?? "")"
+                        
+                        let cleaningFees = self.getUserBookingPropertyArr?[0].cleaningFee ?? ""
+                        if let doubleValue = Double(cleaningFees) {
+                            self.ClearningFee = doubleValue
+                            print(self.ClearningFee ?? 0.0,"ClearningFee") // Output: 10
+                        }
+                        
+                        let zyvoServiceFees = self.getUserBookingPropertyArr?[0].serviceFee ?? ""
+                        if let doubleValue = Double(zyvoServiceFees) {
+                            self.zyvoServicePercentage = doubleValue
+                            self.zyvoServiceFee = ((self.booking_amount ?? 0.0) * doubleValue) / 100.0
+                            // self.zyvoServiceFee = doubleValue
+                            print(self.zyvoServiceFee ?? 0.0,"zyvoServiceFee") // Output: 10
+                        }
+                        if let addonPrices = self.getBookingArr?.first?.totalAddonPrice {
+                            if let doubleValue = Double("\(addonPrices)") {
+                                self.AddonOnsPrice = doubleValue
+                                print(self.AddonOnsPrice ?? 0, "AddonOnsPrice") // Output: 10.0
+                            }
+                        }
+                        
+                        if let propertySize = self.getUserBookingPropertyArr?.first?.propertySize {
+                            self.propertyDistanceInMiles = "\(propertySize)"
+                            print(self.propertyDistanceInMiles , "propertyDistanceInMiles") // Output: 10.0
+                        }
+                        
+                        
+                        let bookingStart = self.getBookingArr?.first?.bookingStart ?? ""
+                        let dateFormatter = DateFormatter()
+                        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+                        
+                        if let date = dateFormatter.date(from: bookingStart) {
+                            dateFormatter.dateFormat = "hh:mm a"
+                            let formattedTime = dateFormatter.string(from: date)
+                            self.startTime = formattedTime
+                            print(formattedTime) // Output: 03:12 PM
+                        }
+                        
+                        let bookingEnd = self.getBookingArr?.first?.bookingEnd ?? ""
+                        
+                        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+                        
+                        if let date = dateFormatter.date(from: bookingEnd) {
+                            dateFormatter.dateFormat = "hh:mm a"
+                            let formattedTime = dateFormatter.string(from: date)
+                            self.endTime = formattedTime
+                            print(formattedTime) // Output: 03:12 PM
+                        }
+                        
+                        self.addOnsArr = self.getUserBookingPropertyArr?[0].addOns ?? []
+                        
+                        print(self.booking_hours ?? 0,self.booking_amount ?? 0.0,"self.booking_hours,self.booking_amount")
+                        
+                        let vc = self.storyboard?.instantiateViewController(withIdentifier: "ExtraTimeExtentionVC") as! ExtraTimeExtentionVC
+                        
+                        if (self.booking_hours ?? 0) > (self.minBookhours ?? 0) {
+                            let result = self.calculateFinalPriceWithDiscount(totalPrice: self.booking_amount ?? 0.0, discountPercent: self.DiscountPercentage ?? 0.0, taxPercent: self.taxPercentage ?? 0.0)
+                            print("================================WithDiscount====================================")
+                            // Printing the Result
+                            print("Total Price: \(result.totalPrice)")
+                            print("Discount Amount (\(String(describing: self.DiscountPercentage))%) : \(result.discountAmount)")
+                            print("Discounted Price: \(result.discountedPrice)")
+                            print("Tax Amount (\(String(describing: self.taxPercentage ?? 0.0))%): \(result.taxAmount )")
+                            self.taxAmount = result.taxAmount
+                            self.DiscountAmount = result.discountAmount
+                            print("Final Price: \(result.finalPrice)")
+                            
+                        } else {
+                            let result = self.calculateFinalPriceWithoutDiscount(totalPrice: self.booking_amount ?? 0.0, taxPercent: self.taxPercentage ?? 0.0)
+                            
+                            print("================================WithoutDiscount====================================")
+                            print("Tax Amount: \(result.taxAmount)")
+                            self.taxAmount = result.taxAmount// 45.0
+                            self.DiscountAmount = 0.0
+                            print("Final Price After Tax: \(result.finalPrice)") // 945.0
+                        }
+                        vc.bookingID = ("\(self.getBookingArr?[0].bookingID ?? 0)")
+                        vc.startTime = self.startTime
+                        vc.endTime = self.endTime
+                        vc.hostName = self.hostName
+                        vc.propertyDistanceInMiles = self.propertyDistanceInMiles
+                        vc.propertyName = self.propertyName
+                        vc.propertyRating = self.propertyRating
+                        vc.propertyNumberofReview =  self.propertyNumberofReview
+                        vc.propertyIMGURL =  self.propertyIMGURL
+                        vc.perHourRate = self.perHourRate
+                        vc.booking_start = self.StartDatetime
+                        vc.booking_end = self.EndDatetime
+                        vc.booking_hours = self.booking_hours ?? 0
+                        vc.booking_amount = self.booking_amount
+                        vc.property_id = self.property_id
+                        vc.booking_date = self.booking_date
+                        //vc.addOnsNeddToSend = self.addOnsNeddToSend
+                        vc.taxAmount =  self.taxAmount
+                        vc.minBookhours = self.minBookhours
+                        vc.DiscountAmount = self.DiscountAmount
+                        vc.ClearningFee = (self.ClearningFee ?? 0.0)
+                        vc.zyvoServiceFee = self.zyvoServiceFee ?? 0.0
+                        vc.AddonOnsPrice = self.AddonOnsPrice ?? 0.0
+                        vc.addOnsArr = self.addOnsArr
+                        vc.arrSelectedArr = self.arrSelectedArr
+                        vc.profileIMGURL = self.profileIMGURL
+                        vc.parkDesc = self.parkDesc
+                        vc.HostingRulesDesc = self.HostingRulesDesc
+                        vc.DiscountPercentage = self.DiscountPercentage
+                        vc.taxPercentage = self.taxPercentage
+                        
+                        print(self.zyvoServicePercentage ?? 0.0,"zyvoServicePercentage")
+                        
+                        vc.zyvoServiceFeePercentage = self.zyvoServicePercentage
+                        
+                        self.navigationController?.pushViewController(vc, animated: true)
+                        
+                    }
+                    
+                    vc.modalPresentationStyle = .overFullScreen
+                    self.present(vc, animated: true)
                 }
             }
-        vc.modalPresentationStyle = .overFullScreen
-        self.present(vc, animated: true)
+            vc.modalPresentationStyle = .overFullScreen
+            self.present(vc, animated: true)
+            
+        }
+       
    
     }
     
@@ -648,6 +732,7 @@ class DiscoverVC: UIViewController,LocationPickerDelegate {
         
     }
     @IBAction func btnFilter_Tap(_ sender: UIButton) {
+        
         let vc = self.storyboard?.instantiateViewController(withIdentifier: "FilterVC") as! FilterVC
         
         vc.timess = self.timess
@@ -674,12 +759,30 @@ class DiscoverVC: UIViewController,LocationPickerDelegate {
         self.present(vc, animated: true)
     }
     override func viewDidDisappear(_ animated: Bool) {
+        
+//        if let mainTabVC = self.tabBarController as? MainTabVC {
+//            mainTabVC.progressBar?.isHidden = true
+//        }
         self.comingFrom = ""
+        timer?.invalidate()
+        timer = nil
+        
     }
     
     @IBAction func btnshowMap_Tap(_ sender: UIButton) {
-        let vc = self.storyboard?.instantiateViewController(withIdentifier: "MapVC") as! MapVC
-        self.navigationController?.pushViewController(vc, animated: true)
+        if let mainTabVC = self.tabBarController as? MainTabVC {
+            mainTabVC.progressBar?.isHidden = true
+            let vc = self.storyboard?.instantiateViewController(withIdentifier: "MapVC") as! MapVC
+            
+            vc.backAction = { str in
+                if str == "Ravi" {
+                    mainTabVC.progressBar?.isHidden = false
+                }
+            }
+            //vc.getHomeDataArr = self.getHomeDataArr
+            self.navigationController?.pushViewController(vc, animated: true)
+        }
+        
     }
 }
 
@@ -690,7 +793,6 @@ extension DiscoverVC :UICollectionViewDelegate,UICollectionViewDataSource {
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        
         let cell = collecV.dequeueReusableCell(withReuseIdentifier: "HomeCell", for: indexPath) as! HomeCell
         let data = getHomeDataArr?[indexPath.item]
         cell.view_Instant.isHidden = true
@@ -701,9 +803,7 @@ extension DiscoverVC :UICollectionViewDelegate,UICollectionViewDataSource {
         if indexPath.row == 3 {
             cell.view_Instant.isHidden = false
         }
-        
         cell.lbl_name.text = data?.title ?? ""
-        
         var rating = data?.rating ?? ""
         if rating != "" {
             cell.lbl_Rating.text = rating
@@ -711,29 +811,25 @@ extension DiscoverVC :UICollectionViewDelegate,UICollectionViewDataSource {
             cell.lbl_Rating.text = ""
         }
         var hour = data?.hourlyRate ?? ""
-        
         if hour != "" {
             cell.lbl_Time.text = "$ \(hour) / h"
         } else {
             cell.lbl_Time.text = ""
         }
-        
         cell.imgArr = data?.images ?? []
         cell.pageV.currentPage = 0
         cell.pageV.numberOfPages = data?.images?.count ?? 0
         cell.CollecV.reloadData()
-        
         let reviewCount = data?.reviewCount ?? "0"
         cell.lbl_NumberOfUser.text = reviewCount > "0" ? "(\(reviewCount))" : ""
         var heartStatus = data?.isInWishlist ?? 0
-        
+        var distanceInMiles = data?.distanceMiles ?? "0"
+        cell.lbl_Distance.text = "\(distanceInMiles) miles away"
         if heartStatus == 0 {
             cell.btnHeart.setImage(UIImage(named: "hearticons"), for: .normal)
         } else {
             cell.btnHeart.setImage(UIImage(named: "day"), for: .normal)
         }
-        
-        
         cell.btnHeart.tag = indexPath.row
         cell.btnHeart.addTarget(self, action: #selector(buttonTapped(_:)), for: .touchUpInside)
         
@@ -741,13 +837,22 @@ extension DiscoverVC :UICollectionViewDelegate,UICollectionViewDataSource {
         cell.didSelectItem = { [weak self] innerIndexPath in
             guard let self = self else { return }
             print("Selected item at outer index: \(indexPath.item), inner index: \(innerIndexPath.item)")
-            
             // Example: Navigate to a new view controller
-            let vc = self.storyboard?.instantiateViewController(withIdentifier: "LocationVC") as! LocationVC
-            vc.propertyID = "\(data?.propertyID ?? 0)"
-            self.navigationController?.pushViewController(vc, animated: true)
+            
+            if let mainTabVC = self.tabBarController as? MainTabVC {
+                mainTabVC.progressBar?.isHidden = true
+                let vc = self.storyboard?.instantiateViewController(withIdentifier: "LocationVC") as! LocationVC
+                vc.backAction = { str in
+                    if str == "Ravi" {
+                        mainTabVC.progressBar?.isHidden = false
+                    }
+                }
+                
+                vc.propertyID = "\(data?.propertyID ?? 0)"
+                self.navigationController?.pushViewController(vc, animated: true)
+            }
+            
         }
-        
         return cell
     }
     
@@ -807,7 +912,7 @@ extension DiscoverVC:UICollectionViewDelegateFlowLayout {
     }
 }
 
-@available(iOS 14.0, *)
+
 extension DiscoverVC {
     func bindVC() {
         
@@ -865,68 +970,116 @@ extension DiscoverVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                    // self.showToast(response.message ?? "")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    
+                    if response.success == true {
                         
-                        self.getUserBooking = response.data
-                        
-                        if self.getUserBooking != nil {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                             
+                            self.getUserBooking = response.data
                             
-                            self.getBookingArr = self.getUserBooking?.bookings ?? []
-                            self.getUserBookingPropertyArr = self.getUserBooking?.properties ?? []
+                            self.getUserBookingPropertyArr = self.getUserBooking?.properties
                             
+                            self.getBookingArr   = self.getUserBooking?.bookings
                             
-                            let stringValue = self.getUserBookingPropertyArr?[0].hourlyRate ?? ""
-                            if let doubleValue = Double(stringValue) {
-                                let intValue = Int(doubleValue)
-                                self.perHourRate = intValue
-                                print(intValue) // Output: 10
-                            }
+                            //  self.minBookhours = self.getUserBookingPropertyArr?[0].minBookingHours ?? ""
                             
-                            let minbookhours = self.getUserBookingPropertyArr?[0].minBookingHours ?? ""
-                            if let doubleValue = Double(minbookhours) {
-                                let intValue = Int(doubleValue)
-                                self.minBookhours = intValue
-                                print(intValue) // Output: 10
-                            }
-                            
-                            print(self.perHourRate ?? 0,"self.perHourRate")
-                            
-                            print(self.getBookingArr ?? [],"getBookingArr")
-                            print(self.getUserBookingPropertyArr ?? [],"getUserBookingPropertyArr")
-                            
-                            self.dateTimer.stopTimer()
-                          
-                            var bookingStartTime = self.getUserBooking?.bookings?[0].bookingStart
-                            var bookingEndtime = self.getUserBooking?.bookings?[0].bookingEnd
-                            print(bookingStartTime ?? "")
-                            print(bookingEndtime ?? "")
-                            
-                            if let difference = self.calculator.calculateTimeDifference(
-                                startTimeString: bookingStartTime ?? "",
-                                endTimeString: bookingEndtime ?? ""
-                            ) {
-                                print("Difference: \(difference.hours) hours, \(difference.minutes) minutes, \(difference.seconds) seconds")
-                                
-                                let hours = difference.hours
-                                let minutes = difference.minutes
-                                let seconds = difference.seconds
-                                
-                                self.startTimer(hours: difference.hours, minutes: difference.minutes, seconds: difference.seconds) // Example: Start a timer for 1:30:45
-                                
-                                self.view_RemainingTime.isHidden = false
-                                
-                                
+                            if let minBookhours = self.getUserBookingPropertyArr?[0].minBookingHours,
+                               let minBookhoursInt = (Double(minBookhours)) {
+                                print("minBookhoursInt : \(minBookhoursInt)")
+                                self.minBookhours = Int(minBookhoursInt)
                             } else {
-                                print("Invalid date format")
+                                print("Invalid hourly rate")
                             }
-                        } else {
+                            //self.bookingID = self.getUserBooking?.bookings[0].bookingID ?? 0
+                            if let hourlyRateString = self.getUserBookingPropertyArr?[0].hourlyRate,
+                               let hourlyRateInt = (Double(hourlyRateString)) {
+                                print("Hourly Rate: \(hourlyRateInt)")
+                                self.perHourRate = Int(hourlyRateInt)
+                            } else {
+                                print("Invalid hourly rate")
+                            }
                             
+                            if self.getUserBooking != nil {
+                                if let bookingStartTimeStr = self.getUserBooking?.bookings?[0].bookingStart,
+                                   let bookingEndTimeStr = self.getUserBooking?.bookings?[0].bookingEnd {
+                                    
+                                    let dateFormatter = DateFormatter()
+                                    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss" // Correct format
+                                    dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+                                    dateFormatter.timeZone = TimeZone.current
+                                    
+                                    if let bookingStartTime = dateFormatter.date(from: bookingStartTimeStr),
+                                       let bookingEndTime = dateFormatter.date(from: bookingEndTimeStr) {
+                                        
+                                        let currentTime = Date()
+                                        
+                                        // Determine the reference time: Use current time if after booking start, otherwise use booking start
+                                        let referenceTime = currentTime > bookingStartTime ? currentTime : bookingStartTime
+                                        
+                                        // Calculate remaining time
+                                        if referenceTime < bookingEndTime {
+                                            let difference = Calendar.current.dateComponents([.hour, .minute, .second], from: referenceTime, to: bookingEndTime)
+                                            
+                                            print("Difference: \(difference.hour ?? 0) hours, \(difference.minute ?? 0) minutes, \(difference.second ?? 0) seconds")
+                                            
+                                            let hours = difference.hour ?? 0
+                                            let Minutes = difference.minute ?? 0
+                                            let seconds = difference.second ?? 0
+                                            
+                                            var durationInSeconds = (hours * 3600) + (Minutes * 60) + seconds
+                                            
+                                            self.startTimer(hours: difference.hour ?? 0, minutes: difference.minute ?? 0, seconds: difference.second ?? 0)
+                                            UserDetail.shared.setisTimeExtend("No")
+                                            
+                                            if let mainTabVC = self.tabBarController as? MainTabVC {
+                                                mainTabVC.progressBar?.isHidden = false
+                                                mainTabVC.duration = Double(durationInSeconds)
+                                                mainTabVC.configureProgressBar(duration: Double(durationInSeconds))
+                                                mainTabVC.progressBar?.isHidden = false
+                                            }
+                                            
+                                            self.view_RemainingTime.isHidden = false
+                                            CurrentDateTimer.shared.stopTimer()
+                                            
+                                        } else {
+                                            
+                                            
+                                            print("Booking time has already ended.")
+                                            //  self.view_RemainingTime.isHidden = true
+                                        }
+                                    } else {
+                                        print("Invalid date format")
+                                    }
+                                }
+                            }
+                            
+                        } } else {
+                            
+                            if let mainTabVC = self.tabBarController as? MainTabVC {
+                                mainTabVC.duration = 30.0//Double(durationInSeconds)
+                                mainTabVC.configureProgressBar(duration: 30.0)
+                                mainTabVC.progressBar?.isHidden = false
+                                self.stackV_TimeLeft.isHidden = false
+                                self.startTimer(hours:  0, minutes: 0, seconds: 30 )
+                                
+                                CurrentDateTimer.shared.stopTimer()
+                            }
+//                            if let mainTabVC = self.tabBarController as? MainTabVC {
+//                                mainTabVC.progressBar?.isHidden = true
+//                                // mainTabVC.progressBar = nil
+//                            }
                         }
-                      
-                    }
                 })
             }.store(in: &cancellables)
+    }
+    
+ 
+    
+    func calculateTimeComponents(from timeInterval: TimeInterval) -> (hours: Int, minutes: Int, seconds: Int) {
+        let hours = Int(timeInterval) / 3600
+        let minutes = (Int(timeInterval) % 3600) / 60
+        let seconds = Int(timeInterval) % 60
+        return (hours, minutes, seconds)
     }
 }
 

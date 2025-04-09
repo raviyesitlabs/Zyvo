@@ -6,18 +6,19 @@
 //
 
 import UIKit
-import KDCircularProgress
+//import KDCircularProgress
 import DropDown
 import Combine
 import TwilioConversationsClient
 import IQKeyboardManagerSwift
 
 class MessageVC:UIViewController {
+    
     @IBOutlet weak var tblV: UITableView!
     @IBOutlet weak var view_Search: UIView!
     @IBOutlet weak var txt_Search: UITextField!
     
-    var Arr = ["Mute","Report","Delete chat","Block"]
+    var Arr = ["Mute","Report","Delete chat","Block","Archive"]
     
     private var totalUnreadCount = 0
     
@@ -27,7 +28,8 @@ class MessageVC:UIViewController {
     
     private var cancellables = Set<AnyCancellable>()
     private var viewModel = ChatDataViewModel()
-    // var chatDataArr : [ChatDataModel]?
+    
+    var index : Int? = 0
     
     private let debouncer = Debouncer()
     private var chatDataArr: [ChatDataModel] = []
@@ -37,6 +39,8 @@ class MessageVC:UIViewController {
     private var listOfChannel: [TCHConversation] = []
     private var listOfChannel_bal = false
     
+    var currentStatus = ""
+    
     private let refreshControl = UIRefreshControl()
     
     override func viewDidLoad() {
@@ -45,6 +49,7 @@ class MessageVC:UIViewController {
         bindVC()
         
         setupTableView()
+        
         setupUI()
         
         view_Search.layer.borderWidth = 1.5
@@ -62,28 +67,13 @@ class MessageVC:UIViewController {
         tblV.dataSource = self
         tblV.register(UINib(nibName: "msgCell", bundle: nil), forCellReuseIdentifier: "msgCell")
         
-        
         let token = UserDetail.shared.getChatToken()
         QuickstartConversationsManager.shared.loginWithAccessToken(token) { (res) in
             print("Login with Access Token")
             self.viewModel.apiForGetChatData(userType: "guest")
         }
-        
-        //        else{
-                 self.conversationsManager.delegate = self
-        //
-        //                let token = UserDetail.shared.getChatToken()
-        //                QuickstartConversationsManager.shared.loginWithAccessToken(token) { (res) in
-        //                    print("Login with Access Token")
-        //                    self.viewModel.apiForGetChatData(userType: "guest")
-        //                }
-        //
-        //        }
-        
-        //refreshControl.addTarget(self, action: #selector(pullToRefresh), for: .valueChanged)
-        //tblV.refreshControl = refreshControl
+         self.conversationsManager.delegate = self
     }
-    
     
     private func setupUI() {
         navigationController?.setNavigationBarHidden(true, animated: false)
@@ -92,7 +82,6 @@ class MessageVC:UIViewController {
     }
     
     @objc private func pullToRefresh() {
-        
         APIManager.shared.apiforGetChatToken(role: "guest") { t in
             let token = UserDetail.shared.getChatToken()
             QuickstartConversationsManager.shared.loginWithAccessToken(token) { (res) in
@@ -100,33 +89,24 @@ class MessageVC:UIViewController {
                 self.viewModel.apiForGetChatData(userType: "guest")
             }
         }
-        
-        
-        
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         conversationsManager.delegate = self
         IQKeyboardManager.shared.enable = true
-        if let token = UserDefaults.standard.object(forKey: "twilioToken") as? String, self.conversationsManager.client == nil {
-            print("I am here")
-            self.conversationsManager.loginWithAccessToken(token) { (res) in
+//        if let token = UserDefaults.standard.object(forKey: "twilioToken") as? String, self.conversationsManager.client == nil {
+//            print("I am here")
+//            let token = UserDetail.shared.getChatToken()
+//            
+//            self.conversationsManager.loginWithAccessToken(token) { (res) in
                 self.reloadAllData()
-                }
-        }else{
-            
-            print("I am not here")
-       
-        }
-
-//        let token = UserDetail.shared.getChatToken()
-//        QuickstartConversationsManager.shared.loginWithAccessToken(token) { (res) in
-//            print("Login with Access Token")
-//            self.viewModel.apiForGetChatData(userType: "guest")
+//                }
+//        }else{
+//            
+//            print("I am not here")
+//       
 //        }
-        
-        
     }
     
     
@@ -160,8 +140,38 @@ class MessageVC:UIViewController {
         // Handle selection
         dropDownFilter.selectionAction = { [weak self] (index, item) in
             guard let self = self else { return }
-            print("Selected month: \(item)")
-            // Perform any further actions as needed
+            print("Selected Value: \(item)")
+            
+            if "\(item)" == "Archived" {
+                
+                self.currentStatus = "Archived"
+                
+                self.chatDataArr = chatDataArr.filter { $0.isArchived == 1 }
+                self.tblV.reloadData()
+                
+            }
+            if "\(item)" == "Unread" {
+                self.currentStatus = "Unread"
+                getUnreadConversations { [weak self] unreadConversations in
+                        guard let self = self else { return }
+                        // Filter only the unread messages
+                        self.chatDataArr = self.chatDataArr.filter { chat in
+                            unreadConversations.contains { $0.uniqueName == chat.groupName }
+                        }
+                        self.tblV.reloadData() // Reload table with unread messages
+                    }
+            }
+            if "\(item)" == "All Conversations" {
+                
+                self.currentStatus = "All Conversations"
+                
+                let token = UserDetail.shared.getChatToken()
+                QuickstartConversationsManager.shared.loginWithAccessToken(token) { (res) in
+                    print("Login with Access Token")
+                    self.viewModel.apiForGetChatData(userType: "guest")
+                }
+                
+            }
         }
         
         // Show dropdown
@@ -170,6 +180,29 @@ class MessageVC:UIViewController {
         
     }
     
+    func getUnreadConversations(completion: @escaping ([TCHConversation]) -> Void) {
+        
+        var unreadConversations: [TCHConversation] = []
+
+        let dispatchGroup = DispatchGroup()
+
+        for conversation in self.listOfChannel {
+            dispatchGroup.enter()
+            conversation.getUnreadMessagesCount { (result, unreadCount) in
+                if result.isSuccessful, let unread = unreadCount?.intValue, unread > 0 {
+                    unreadConversations.append(conversation) // ✅ Append only unread messages
+                }
+                dispatchGroup.leave()
+            }
+        }
+
+        dispatchGroup.notify(queue: .main) {
+            print(unreadConversations.count,"COUNT")
+            completion(unreadConversations) // ✅ Return unread conversations
+        }
+    }
+
+
     
     private func fetchUnreadMessageCounts() {
         var totalUnreadCount = 0
@@ -210,15 +243,12 @@ extension MessageVC : UITableViewDelegate,UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return chatDataArr.count ?? 0
     }
-    
-    
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tblV.dequeueReusableCell(withIdentifier: "msgCell", for: indexPath) as! msgCell
         let data = chatDataArr[indexPath.row]
         
         cell.userName.text = data.receiverName ?? ""
-        
+        cell.lbl_PropertyTitle.text = "(\(data.propertyTitle ?? ""))"
         var image = data.receiverImage ?? ""
         let imgURL = AppURL.imageURL + image
         cell.userImg.loadImage(from:imgURL,placeholder: UIImage(named: "img1"))
@@ -246,7 +276,6 @@ extension MessageVC : UITableViewDelegate,UITableViewDataSource {
                     }
                 }
             }
-            
             conversation.getUnreadMessagesCount { (res, unreadCount) in
                 DispatchQueue.main.async {
                     if let unread = unreadCount as? Int, unread > 0 {
@@ -257,62 +286,105 @@ extension MessageVC : UITableViewDelegate,UITableViewDataSource {
         }
         return cell
  }
-    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let data = chatDataArr[indexPath.row]
         let storyboard = UIStoryboard(name: "Chat", bundle: nil)
         
-        if let vc = storyboard.instantiateViewController(withIdentifier: "ChatVC") as? ChatVC {
-            vc.uniqueConversationName = data.groupName ?? ""
-            vc.friend_id = data.receiverID ?? ""
-
-            let hostImage = data.receiverImage ?? ""
-            let guestImage = data.senderProfile ?? ""
-            vc.hostProfileImg = AppURL.imageURL + hostImage
-            vc.guesttProfileImg = AppURL.imageURL + guestImage
-            vc.hostName = data.receiverName ?? ""
-            vc.guestName = data.senderName ?? ""
-
-            self.tabBarController?.tabBar.isHidden = true
-            vc.hidesBottomBarWhenPushed = true
-
-            if let uniqueName = data.groupName,
-               let conversation = data.chatData,
-               uniqueName == conversation.uniqueName {
-
-                conversation.getUnreadMessagesCount { (result, unreadCount) in
-                    DispatchQueue.main.async {
-                        if let unread  = unreadCount {
-                            print("Unread count for \(uniqueName): \(unread)")
-                            
-                            var remainingCount = self.totalUnreadCount  - Int(truncating: unread)
-                            
-                            self.totalUnreadCount = remainingCount
-                                
+            if let vc = storyboard.instantiateViewController(withIdentifier: "ChatVC") as? ChatVC {
+                vc.uniqueConversationName = data.groupName ?? ""
+                let userid = UserDetail.shared.getUserId()
+                if userid == data.receiverID {
+                    vc.friend_id = data.senderID ?? ""
+                } else if userid == data.senderID {
+                    vc.friend_id = data.receiverID ?? ""
+                }
+                
+               // vc.friend_id = data.receiverID ?? ""
+                vc.SenderID = data.senderID ?? ""
+                vc.favoriteStatus = data.isFavorite ??  0
+                vc.isBlockStatus = data.isBlocked ?? 0
+                vc.isMuteStatus = data.isMuted ?? 0
+                vc.isArchiveStatus = data.isArchived ?? 0
+                let hostImage = data.senderProfile ?? ""
+                let guestImage = data.receiverImage ?? ""
+                vc.hostProfileImg = AppURL.imageURL + hostImage
+                vc.guesttProfileImg = AppURL.imageURL + guestImage
+                vc.hostName = data.receiverName ?? ""
+                vc.guestName = data.senderName ?? ""
+                
+                self.tabBarController?.tabBar.isHidden = true
+                vc.hidesBottomBarWhenPushed = true
+                
+                if let uniqueName = data.groupName,
+                   let conversation = data.chatData,
+                   uniqueName == conversation.uniqueName {
+                    conversation.getUnreadMessagesCount { (result, unreadCount) in
+                        DispatchQueue.main.async {
+                            if let unread  = unreadCount {
+                                print("Unread count for \(uniqueName): \(unread)")
+                                var remainingCount = self.totalUnreadCount  - Int(truncating: unread)
+                                self.totalUnreadCount = remainingCount
                                 print("Total Unread Messages DidSelect : \(remainingCount)")
                                 if let tabBarVC = self.tabBarController as? MainTabVC {
                                     tabBarVC.updateBadgeCount(remainingCount)
                                 }
-                            
-                        } else {
-                            print("Unread count is nil for \(uniqueName)")
+                            } else {
+                                print("Unread count is nil for \(uniqueName)")
+                            }
                         }
                     }
+                } else {
+                    print("Conversation not found for \(data.groupName ?? "Unknown")")
                 }
-            } else {
-                print("Conversation not found for \(data.groupName ?? "Unknown")")
+                vc.backAction = { str,favStatus, muteStatus, archiveStatus in
+                    print("\(str) Block Status Received")
+                    print("\(favStatus) favStatus Received")
+                    print("\(muteStatus) muteStatus Received")
+                    print("\(archiveStatus) muteStatus Received")
+                    let isblockedStatus = str
+                    let isMuteStatus = muteStatus
+                    if isblockedStatus == "0" {
+                        self.Arr[3] = "Block"
+                        self.chatDataArr[indexPath.row].isBlocked = 0
+                    }
+                    if isblockedStatus == "1" {
+                        self.Arr[3] = "Unblock"
+                        self.chatDataArr[indexPath.row].isBlocked = 1
+                    }
+                    let isFavStatus = favStatus
+                    if isFavStatus == "0" {
+                        self.chatDataArr[indexPath.row].isFavorite = 0
+                    }
+                    if isFavStatus == "1" {
+                        self.chatDataArr[indexPath.row].isFavorite = 1
+                    }
+                    let MuteStatus = isMuteStatus
+                    if MuteStatus == "0" {
+                        self.chatDataArr[indexPath.row].isMuted = 0
+                    }
+                    if isMuteStatus == "1" {
+                        self.chatDataArr[indexPath.row].isMuted = 1
+                    }
+                    let isarchiveStatus = archiveStatus
+                    if isarchiveStatus == "0" {
+                        self.chatDataArr[indexPath.row].isArchived = 0
+                    }
+                    if isarchiveStatus == "1" {
+                        self.chatDataArr[indexPath.row].isArchived = 1
+                    }
+                    if self.currentStatus == "All Conversations" || self.currentStatus == "Archived" || self.currentStatus == "Unread" {
+                        self.currentStatus = ""
+                        let token = UserDetail.shared.getChatToken()
+                        QuickstartConversationsManager.shared.loginWithAccessToken(token) { (res) in
+                            print("Login with Access Token")
+                            self.viewModel.apiForGetChatData(userType: "guest")
+                        }
+                    }
+                    self.tabBarController?.tabBar.isHidden = false
+                }
+                self.navigationController?.pushViewController(vc, animated: true)
             }
-
-            vc.backAction = { str in
-                print("\(str) Data Received")
-                self.tabBarController?.tabBar.isHidden = false
-            }
-            self.navigationController?.pushViewController(vc, animated: true)
         }
-    }
-
-
-    
     @objc func buttonDetails(_ sender: UIButton) {
         let d = sender.tag
         print(d,"Index")
@@ -323,6 +395,31 @@ extension MessageVC : UITableViewDelegate,UITableViewDataSource {
     @objc func buttonTapped(_ sender: UIButton) {
         print("RAVI")
         // Set up the dropdown
+        let blockedStatus = chatDataArr[sender.tag].isBlocked ?? 0
+        
+        let muteStatus = chatDataArr[sender.tag].isMuted ?? 0
+        
+        let archiveStatus = chatDataArr[sender.tag].isArchived ?? 0
+        
+        self.index = sender.tag
+        if archiveStatus == 0 {
+            Arr[4] = "Archive"
+        }
+        if archiveStatus == 1 {
+            Arr[4] = "Unarchive"
+        }
+        if muteStatus == 0 {
+            Arr[0] = "Mute"
+        }
+        if muteStatus == 1 {
+            Arr[0] = "Unmute"
+        }
+        if blockedStatus == 0 {
+            Arr[3] = "Block"
+        }
+        if blockedStatus == 1 {
+            Arr[3] = "Unblock"
+        }
         dropDown.anchorView = sender // Anchor dropdown to the button
         dropDown.dataSource = Arr
         dropDown.direction = .bottom
@@ -351,13 +448,115 @@ extension MessageVC : UITableViewDelegate,UITableViewDataSource {
         // Handle selection
         dropDown.selectionAction = { [weak self] (index, item) in
             guard let self = self else { return }
+            
+            print("Selected index: \(index)")
             print("Selected month: \(item)")
             
-            // Perform any further actions as needed
+            if item == "Report" {
+                let vc = self.storyboard?.instantiateViewController(withIdentifier: "ReportViolationVC") as! ReportViolationVC
+                self.tabBarController?.tabBar.isHidden = true
+                vc.ComingFrom = "MessageChat"
+                vc.reporter_id = chatDataArr[sender.tag].senderID ?? ""
+                vc.reported_user_id = chatDataArr[sender.tag].receiverID ?? ""
+                vc.backAction = { str in
+                    if str == "Cancel"{
+                        self.tabBarController?.tabBar.isHidden = false
+                    }
+                    if str == "ReportSubmitted"{
+                        self.tabBarController?.tabBar.isHidden = false
+                    }
+                }
+                vc.modalPresentationStyle = .overCurrentContext
+                self.present(vc, animated: true)
+            }
+            
+            if item == "Block" {
+                print("call api for block here")
+                
+                if item == "Block" {
+                    viewModel.apiForBlockUser(senderId: chatDataArr[sender.tag].senderID ?? "", group_channel: chatDataArr[sender.tag].groupName ?? "", blockUnblock: "1")
+                }
+            }
+            if item == "Unblock" {
+                print("call api for unblock here")
+                
+                if item == "Unblock" {
+                    viewModel.apiForBlockUser(senderId: chatDataArr[sender.tag].senderID ?? "", group_channel: chatDataArr[sender.tag].groupName ?? "", blockUnblock: "0")
+                }
+            }
+            if item == "Mute" {
+                viewModel.apiForSetMuteUnmute(senderId: chatDataArr[sender.tag].senderID ?? "", group_channel: chatDataArr[sender.tag].groupName ?? "", mute: "1")
+            }
+            if item == "Unmute" {
+                viewModel.apiForSetMuteUnmute(senderId: chatDataArr[sender.tag].senderID ?? "", group_channel: chatDataArr[sender.tag].groupName ?? "", mute: "0")
+            }
+            if item == "Archive" {
+                viewModel.apiForSetArchiveUnarchive(senderId: chatDataArr[sender.tag].senderID ?? "", group_channel: chatDataArr[sender.tag].groupName ?? "")
+            }
+            if item == "Unarchive" {
+                viewModel.apiForSetArchiveUnarchive(senderId: chatDataArr[sender.tag].senderID ?? "", group_channel: chatDataArr[sender.tag].groupName ?? "")
+            }
+            if item == "Delete chat" {
+                leaveConversation(groupName: chatDataArr[sender.tag].groupName ?? "") { success, errorMessage in
+                    if success {
+                        print("TESTING: Chat deleted successfully.")
+                        // Find the index of the chat to delete
+                        if let index = self.chatDataArr.firstIndex(where: { $0.groupName == self.chatDataArr[sender.tag].groupName }) {
+                            self.viewModel.apiForDeleteChat(userType: "guest", groupChannel: self.chatDataArr[sender.tag].groupName ?? "")
+                        }
+                    } else {
+                        print("TESTING: Failed to delete chat. Error: \(errorMessage ?? "Unknown error")")
+                    }
+                }
+            }
         }
-        
         // Show dropdown
         dropDown.show()
+    }
+    
+    func leaveConversation(groupName: String, completion: @escaping (Bool, String?) -> Void) {
+        guard let client = conversationsManager.client else {
+            completion(false, "Conversations client is not initialized.")
+            return
+        }
+
+        client.conversation(withSidOrUniqueName: groupName) { result, conversation in
+            if let conversation = conversation, result.isSuccessful {
+                conversation.leave { status in
+                    if status.isSuccessful {
+                        print("Successfully left the conversation.")
+                        completion(true, nil)
+                    } else {
+                        completion(false, status.resultText ?? "Unknown error occurred while leaving conversation.")
+                    }
+                }
+            } else {
+                completion(false, result.resultText ?? "Failed to retrieve conversation.")
+            }
+        }
+    }
+
+    
+    func deleteConversation(groupName: String, completion: @escaping (Bool, String?) -> Void) {
+        guard let client = conversationsManager.client else {
+            completion(false, "Conversations client is not initialized.")
+            return
+        }
+
+        client.conversation(withSidOrUniqueName: groupName) { result, conversation in
+            if let conversation = conversation, result.isSuccessful {
+                conversation.destroy { status in
+                    if status.isSuccessful {
+                        print("YES CHAT DELETED")
+                        completion(true, nil)
+                    } else {
+                        completion(false, status.resultText ?? "Unknown error occurred while deleting conversation.")
+                    }
+                }
+            } else {
+                completion(false, result.resultText ?? "Failed to retrieve conversation.")
+            }
+        }
     }
 }
 
@@ -396,9 +595,8 @@ extension MessageVC {
     }
 }
 
-
-
 extension MessageVC: QuickstartConversationsManagerDelegate {
+
     
     func reloadAllData() {
         debouncer.debounce(1.0) { [weak self] in
@@ -457,8 +655,6 @@ extension MessageVC: QuickstartConversationsManagerDelegate {
     }
     
     func receivedNewMessage(message: TCHMessage) {
-        
-        
         if let client = conversationsManager.client, let list = client.myConversations() {
             DispatchQueue.main.async {
                 self.listOfChannel = list
@@ -484,11 +680,90 @@ extension MessageVC {
                     DispatchQueue.main.asyncAfter(deadline: .now() ){
                         
                         self.reloadAllData()
-                        // self.tblV.reloadData()
+                        
                         self.refreshControl.endRefreshing()
                     }
                 })
             }.store(in: &cancellables)
+        
+        // Result Block api
+        viewModel.$blockResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] result in
+                guard let self = self else{return}
+                result?.handle(success: { response in
+                    
+                    var isblockedStatus = response.data?.isBlocked ?? false
+                    print(response.message ?? "")
+                    print(isblockedStatus,"isblockedStatus")
+                    if isblockedStatus == true {
+                        self.Arr[3] = "Unblock"
+                        self.chatDataArr[self.index ?? 0].isBlocked = 1
+                    }
+                    if isblockedStatus == false {
+                        self.Arr[3] = "Block"
+                        self.chatDataArr[self.index ?? 0].isBlocked = 0
+                    }
+      
+                })
+            }.store(in: &cancellables)
+        
+  // Result Mute Unmute api
+        viewModel.$getMuteUnmuteResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] result in
+                guard let self = self else{return}
+                result?.handle(success: { response in
+                    
+                    var isMuteStatus = response.data?.muteStatus ?? 0
+                    print(response.message ?? "")
+                    print(isMuteStatus,"isMuteStatus")
+                    if isMuteStatus == 1 {
+                        self.Arr[0] = "Unmute"
+                        self.chatDataArr[self.index ?? 0].isMuted = 1
+                    }
+                    if isMuteStatus == 0 {
+                        self.Arr[0] = "Mute"
+                        self.chatDataArr[self.index ?? 0].isMuted = 0
+                    }
+      
+                })
+            }.store(in: &cancellables)
+        
+        // Result Archive UnArchive api
+              viewModel.$setArchiveResult
+                  .receive(on: DispatchQueue.main)
+                  .sink { [weak self] result in
+                      guard let self = self else{return}
+                      result?.handle(success: { response in
+                          var isArchiveResult = response.data?.isArchived ?? false
+                          print(response.message ?? "")
+                          print(isArchiveResult,"isArchiveResult")
+                          if isArchiveResult == true {
+                              self.Arr[4] = "Unarchive"
+                              self.chatDataArr[self.index ?? 0].isArchived = 1
+                          }
+                          if isArchiveResult == false {
+                              self.Arr[4] = "Archive"
+                              self.chatDataArr[self.index ?? 0].isArchived = 0
+                          }
+                      })
+                  }.store(in: &cancellables)
+        
+        
+        // Result Mute Unmute api
+        viewModel.$getDeleteChatResult
+                  .receive(on: DispatchQueue.main)
+                  .sink { [weak self] result in
+                      guard let self = self else{return}
+                      result?.handle(success: { response in
+                          print(response.message ?? "")
+                          self.chatDataArr.remove(at: self.index ?? 0)
+                         DispatchQueue.main.async {
+                         self.tblV.reloadData()
+                         }
+                      })
+                  }.store(in: &cancellables)
         
     }
 }

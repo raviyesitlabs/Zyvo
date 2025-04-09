@@ -36,7 +36,8 @@ target 'Zyvo' do
     pod 'RangeSeekSlider'
     pod 'PersonaInquirySDK2'
      pod 'ISEmojiView'
-    pod 'TwilioConversationsClient', '~> 3.1'
+    #pod 'TwilioConversationsClient', '~> 3.1'
+	pod 'TwilioConversationsClient'
 
 
   target 'ZyvoTests' do

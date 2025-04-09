@@ -83,7 +83,12 @@ class LoginVC: UIViewController,UITextFieldDelegate {
        }
 
     @IBAction func btnCross_Tap(_ sender: UIButton) {
-        self.navigationController?.popToViewController(ofClass: HomeVCWithoutLoginVC.self)
+        
+       // self.dismiss(animated: true)
+        
+        self.navigationController?.popToViewController(ofClass: HomeVCWithoutLoginVC.self, animated: false)
+
+     
     }
     
     @IBAction func btnCheckBox(_ sender: UIButton) {

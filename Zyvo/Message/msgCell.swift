@@ -9,6 +9,7 @@ import UIKit
 
 class msgCell: UITableViewCell {
 
+    @IBOutlet weak var lbl_PropertyTitle: UILabel!
     @IBOutlet weak var lbl_time: UILabel!
     @IBOutlet weak var lbl_message: UILabel!
     @IBOutlet weak var userName: UILabel!

@@ -12,10 +12,8 @@ import Combine
 
 class WhereVC: UIViewController, FSCalendarDelegate, FSCalendarDataSource, FSCalendarDelegateAppearance,UITextFieldDelegate, CircularSeekBarDelegate, GMSAutocompleteFetcherDelegate  {
     
-    
-    
-    //    let circularSeekBar = CircularSeekBar() // Instance of the custom CircularSeekBar
-    //       let hoursLabel = UILabel() // Label to display the selected hour
+    //   let circularSeekBar = CircularSeekBar() // Instance of the custom CircularSeekBar
+    //   let hoursLabel = UILabel() // Label to display the selected hour
     
     @IBOutlet weak var view_Calendar: UIView!
     @IBOutlet weak var whereLbl: UILabel!

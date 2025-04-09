@@ -228,7 +228,7 @@ DEPENDENCIES:
   - Stripe
   - SwiftyJSON (~> 4.0)
   - TTGTagCollectionView
-  - TwilioConversationsClient (~> 3.1)
+  - TwilioConversationsClient
   - YPImagePicker
 
 SPEC REPOS:
@@ -354,6 +354,6 @@ SPEC CHECKSUMS:
   TwilioTwilsockLib: 06086e8e9fb45fb41a2311b83f9e059c6a70b09b
   YPImagePicker: afc81b3cffab05a6e7261c5daf80dc31b4e917b4
 
-PODFILE CHECKSUM: 06e4861277d9934e3a6f124958ce29220e1eaf31
+PODFILE CHECKSUM: 72a63f3de6dd86929f6aa6f0f911bf86cddb0959
 
 COCOAPODS: 1.16.2

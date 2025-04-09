@@ -87,6 +87,11 @@ class HostBookingAVC: UIViewController {
     var lot: Double?
     private let spacing:CGFloat = 16.0
     
+    
+    var hostProfileImgg = ""
+    
+    var guestProfileImgg = ""
+    
     let timeDropdown = DropDown()
     
     var Times = ["Highest Review","Lowest Review","Recent Reviews"]
@@ -97,12 +102,19 @@ class HostBookingAVC: UIViewController {
     var bookingDetailViewModel = BookingDetailViewModel()
     var bookingDetailArr : BookingDetailDataModel?
     var reviewDataArr = [H_ReviewsDataModel]()
+    
+    var getJoinChannelDetails : JoinChanelModel?
+    private var viewModel = BookingDetailsViewModel()
     private var cancellables = Set<AnyCancellable>()
+    
+    var channelName = ""
     
     override func viewDidLoad() {
         super.viewDidLoad()
         self.bindVC_GetBookingDetail()
         self.bindVC_GetReviews()
+        
+        bindVC()
         
         view_DescParking.isHidden = true
         view_DescHostRules.isHidden = true
@@ -296,7 +308,11 @@ class HostBookingAVC: UIViewController {
     }
     
     @IBAction func btnMessageHost_Tap(_ sender: UIButton) {
-        self.tabBarController?.selectedIndex = 1
+       // self.tabBarController?.selectedIndex = 1
+        
+        let senderID = UserDetail.shared.getUserId()
+        
+        viewModel.apiForJoinChannel(senderId: senderID, receiverId: "\(self.bookingDetailArr?.guestID ?? 0)", groupChannel: self.channelName, userType: "host")
         
     }
     
@@ -451,6 +467,16 @@ extension HostBookingAVC{
                 result?.handle(success: { response in
                     self.bookingDetailArr = response.data
                     
+                    
+                    // self.reviewsArr = self.getBookingDetails?.reviews
+                    let guestID = self.bookingDetailArr?.guestID ?? 0
+                    let hostID = self.bookingDetailArr?.hostID ?? 0
+                    
+                    let id1 = min(guestID, hostID)
+                    let id2 = max(guestID, hostID)
+                    
+                    self.channelName = "ZYVOOPROJ_\(id1)_\(id2)_\(self.bookingDetailArr?.propertyID ?? 0)"
+                    
                     self.guestNameLbl.text = self.bookingDetailArr?.guestName
                     self.guestRatingLbl.text = self.bookingDetailArr?.guestRating
                     self.propertyNameLbl.text = self.bookingDetailArr?.propertyTitle
@@ -551,3 +577,44 @@ extension HostBookingAVC{
     }
     
 }
+
+
+extension HostBookingAVC {
+    func bindVC(){
+        
+        viewModel.$getJoinChannelResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] result in
+                guard let self = self else{return}
+                result?.handle(success: { response in
+                    
+                    self.getJoinChannelDetails = response.data
+                    
+                    var senderID =  self.getJoinChannelDetails?.senderID ?? ""
+                    var receiverID =  self.getJoinChannelDetails?.receiverID ?? ""
+                    
+                    let guestIMG = self.getJoinChannelDetails?.senderAvatar ?? ""
+                    self.guestProfileImgg = AppURL.imageURL + guestIMG
+                    
+                    let HostIMG = self.getJoinChannelDetails?.receiverAvatar ?? ""
+                    self.hostProfileImgg = AppURL.imageURL + HostIMG
+                    
+                    let stryB = UIStoryboard(name: "Host", bundle: nil)
+                    if let vc = stryB.instantiateViewController(withIdentifier: "HostChatVC") as? HostChatVC {
+                        vc.uniqueConversationName = self.channelName
+                        vc.friend_id = "\(receiverID)"
+                        vc.hostProfileImg = self.hostProfileImgg
+                        vc.guesttProfileImg =  self.guestProfileImgg
+                        self.tabBarController?.tabBar.isHidden = true
+                        vc.hidesBottomBarWhenPushed = true
+                        self.navigationController?.pushViewController(vc, animated: true)
+                    }
+                    
+                })
+            }.store(in: &cancellables)
+        
+        
+        
+    }
+}
+   

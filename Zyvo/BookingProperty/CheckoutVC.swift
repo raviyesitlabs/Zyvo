@@ -17,6 +17,10 @@ class CheckoutVC: UIViewController {
     
     private var viewModel = BookingPropertyViewModel()
     
+    private var viewModel1 = BookingDetailsViewModel()
+    
+    var getJoinChannelDetails : JoinChanelModel?
+    
     var getCardArr : [Card]?
     
     var card_id = ""
@@ -26,6 +30,9 @@ class CheckoutVC: UIViewController {
     var indx : Int? = 0
     
     var bookingResult : BookingModel?
+    
+    
+    
     // var  addOnsArr: [AddOn]?
     
     
@@ -185,6 +192,7 @@ class CheckoutVC: UIViewController {
     var zyvoServiceFee : Double? = 0
     var zyvoServicePercentage : Double? = 0
     var tax : Double? = 0
+    var channelName = ""
     
     var DiscountPercentage : Double? = 0.0
     var taxPercentage : Double? = 0.0
@@ -192,12 +200,32 @@ class CheckoutVC: UIViewController {
     var parkDesc = ""
     var HostingRulesDesc = ""
     
+    var hostProfileImg = ""
+    
+    var guestProfileImg = ""
+    
+   // var hostName = ""
+    var guestName = ""
+    
+   
+    var hostID = 0
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         bindVC()
         
         viewModel.apiForGetSavedCard()
+        
+        let guestID = Int(UserDetail.shared.getUserId())
+        let hostID = self.hostID
+        
+        let id1 = min(guestID ?? 0 , hostID)
+        let id2 = max(guestID ?? 0, hostID)
+        
+        self.channelName = "ZYVOOPROJ_\(id1)_\(id2)_\(self.property_id)"
+        print(self.channelName,"self.channelName")
+        print(id1,id2,self.propertyID,"ASDFASDF")
         
         let inputDate = "\(booking_date)"
         let inputFormatter = DateFormatter()
@@ -596,7 +624,11 @@ class CheckoutVC: UIViewController {
     }
     
     @IBAction func btnShowMessageHost_Tap(_ sender: UIButton) {
-        viewHold_MessageHost.isHidden = false
+       // viewHold_MessageHost.isHidden = false
+        
+        let senderID = UserDetail.shared.getUserId()
+        viewModel1.apiForJoinChannel(senderId: senderID, receiverId: "\(self.hostID )", groupChannel: self.channelName, userType: "guest")
+         
     }
     
     @IBAction func btnHours_Tap(_ sender: UIButton) {
@@ -979,9 +1011,13 @@ extension CheckoutVC {
                     
                     self.bookingID = "\(self.bookingResult?.booking?.id ?? 0)"
                     
+                    
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "CheckOutConfirmationVC") as! CheckOutConfirmationVC
                     vc.startTime = self.startTime
+                    vc.channelName = self.channelName
+                    vc.hostID = self.hostID
                     vc.endTime = self.endTime
+                   
                     vc.hostName = self.hostName
                     vc.propertyDistanceInMiles = self.propertyDistanceInMiles
                     vc.propertyName = self.propertyName
@@ -1047,6 +1083,39 @@ extension CheckoutVC {
                     
                 })
             }.store(in: &cancellables)
+        
+        viewModel1.$getJoinChannelResult
+                  .receive(on: DispatchQueue.main)
+                  .sink { [weak self] result in
+                      guard let self = self else{return}
+                      result?.handle(success: { response in
+                          
+                          self.getJoinChannelDetails = response.data
+                          
+                          var senderID =  self.getJoinChannelDetails?.senderID ?? ""
+                          var receiverID =  self.getJoinChannelDetails?.receiverID ?? ""
+                          
+                          let guestIMG = self.getJoinChannelDetails?.senderAvatar ?? ""
+                          self.guestProfileImg = AppURL.imageURL + guestIMG
+                          
+                          let HostIMG = self.getJoinChannelDetails?.receiverAvatar ?? ""
+                          self.hostProfileImg = AppURL.imageURL + HostIMG
+                          
+                          let stryB = UIStoryboard(name: "Chat", bundle: nil)
+                          if let vc = stryB.instantiateViewController(withIdentifier: "ChatVC") as? ChatVC {
+                          vc.uniqueConversationName = self.channelName
+                          vc.friend_id = "\(receiverID)"
+                          vc.SenderID = senderID
+                          vc.guestName = self.getJoinChannelDetails?.senderName ?? ""
+                          vc.hostProfileImg = self.hostProfileImg
+                          vc.guesttProfileImg =  self.guestProfileImg
+                          self.tabBarController?.tabBar.isHidden = true
+                          vc.hidesBottomBarWhenPushed = true
+                          self.navigationController?.pushViewController(vc, animated: true)
+                          }
+                          
+                      })
+                  }.store(in: &cancellables)
         
         
     }

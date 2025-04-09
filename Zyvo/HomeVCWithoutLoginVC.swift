@@ -18,6 +18,8 @@ class HomeVCWithoutLoginVC: UIViewController {
      private var viewModel = HomeDataViewModel()
     var getHomeDataArr : [HomeDataModel]?
 
+    var comingFrom = ""
+    var timess: Int = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,16 +36,7 @@ class HomeVCWithoutLoginVC: UIViewController {
                  let vc = self.storyboard?.instantiateViewController(withIdentifier: "MainTabVC") as! MainTabVC
                  self.navigationController?.pushViewController(vc, animated: false)
              }
-            
-            
-//           // if isProfileCompleted == "true" {
-//                let vc = self.storyboard?.instantiateViewController(withIdentifier: "MainTabVC") as! MainTabVC
-//                self.navigationController?.pushViewController(vc, animated: false)
-////            } else {
-////                let vc = self.storyboard?.instantiateViewController(withIdentifier: "CreateProfileVC") as! CreateProfileVC
-////                self.navigationController?.pushViewController(vc, animated: false)
-////            }
-            
+   
         }
   
         view_Search.layer.borderWidth = 1.5
@@ -60,30 +53,126 @@ class HomeVCWithoutLoginVC: UIViewController {
         viewModel.apiforGetHomeDataWithoutLogin()
     }
     @IBAction func btnWhereTap(_ sender: UIButton) {
+       
         let vc = self.storyboard?.instantiateViewController(withIdentifier: "WhereVC") as! WhereVC
+//        vc.timess = self.timess
         vc.comeFrom = "Where"
-        self.navigationController?.pushViewController(vc, animated: true)
+        vc.backAction = { str, str1 in
+            print( str, str1,"data Recieved")
+            if str1 == "Clear" {
+                self.viewModel.apiforGetHomeData()
+            } else if str1 == "" {
+                self.viewModel.apiforGetHomeData()
+            } else {
+                self.comingFrom = "Filter"
+                if str?.count == nil {
+                    let vc = self.storyboard?.instantiateViewController(withIdentifier: "SorryVC") as! SorryVC
+                    self.navigationController?.pushViewController(vc, animated: true)
+                } else {
+                    self.getHomeDataArr?.removeAll()
+                    self.getHomeDataArr = str
+                    self.collecV.reloadData()
+                }
+            }
+        }
+        vc.modalPresentationStyle = .overFullScreen
+        self.present(vc, animated: true)
     }
     
     @IBAction func btnTime_Tap(_ sender: UIButton) {
+//        let vc = self.storyboard?.instantiateViewController(withIdentifier: "WhereVC") as! WhereVC
+//        vc.comeFrom = "Time"
+//        self.navigationController?.pushViewController(vc, animated: true)
+        
         let vc = self.storyboard?.instantiateViewController(withIdentifier: "WhereVC") as! WhereVC
+//        vc.timess = self.timess
         vc.comeFrom = "Time"
-        self.navigationController?.pushViewController(vc, animated: true)
+        vc.backAction = { str, str1 in
+            print( str, str1,"data Recieved")
+            if str1 == "Clear" {
+                self.viewModel.apiforGetHomeData()
+            } else if str1 == "" {
+                self.viewModel.apiforGetHomeData()
+            } else {
+                self.comingFrom = "Filter"
+                if str?.count == nil {
+                    let vc = self.storyboard?.instantiateViewController(withIdentifier: "SorryVC") as! SorryVC
+                    self.navigationController?.pushViewController(vc, animated: true)
+                } else {
+                    self.getHomeDataArr?.removeAll()
+                    self.getHomeDataArr = str
+                    self.collecV.reloadData()
+                }
+            }
+        }
+        vc.modalPresentationStyle = .overFullScreen
+        self.present(vc, animated: true)
     }
     
     @IBAction func btnActivity_Tap(_ sender: UIButton) {
+//        let vc = self.storyboard?.instantiateViewController(withIdentifier: "WhereVC") as! WhereVC
+//        vc.comeFrom = "Activity"
+//        self.navigationController?.pushViewController(vc, animated: true)
+        
         let vc = self.storyboard?.instantiateViewController(withIdentifier: "WhereVC") as! WhereVC
+//        vc.timess = self.timess
         vc.comeFrom = "Activity"
-        self.navigationController?.pushViewController(vc, animated: true)
+        vc.backAction = { str, str1 in
+            print( str, str1,"data Recieved")
+            if str1 == "Clear" {
+                self.viewModel.apiforGetHomeData()
+            } else if str1 == "" {
+                self.viewModel.apiforGetHomeData()
+            } else {
+                self.comingFrom = "Filter"
+                if str?.count == nil {
+                    let vc = self.storyboard?.instantiateViewController(withIdentifier: "SorryVC") as! SorryVC
+                    self.navigationController?.pushViewController(vc, animated: true)
+                } else {
+                    self.getHomeDataArr?.removeAll()
+                    self.getHomeDataArr = str
+                    self.collecV.reloadData()
+                }
+            }
+        }
+        vc.modalPresentationStyle = .overFullScreen
+        self.present(vc, animated: true)
     }
     @IBAction func btnSearch_Tap(_ sender: UIButton) {
     }
     @IBAction func btnFilter_Tap(_ sender: UIButton) {
+        
+        let vc = self.storyboard?.instantiateViewController(withIdentifier: "FilterVC") as! FilterVC
+        
+        vc.timess = self.timess
+        
+        vc.backAction = { str, str1 in
+            print( str, str1,"data Recieved")
+            if str1 == "Clear" {
+                self.viewModel.apiforGetHomeData()
+            } else if str1 == "" {
+                self.viewModel.apiforGetHomeData()
+            } else {
+                self.comingFrom = "Filter"
+                if str?.count == nil {
+                    let vc = self.storyboard?.instantiateViewController(withIdentifier: "SorryVC") as! SorryVC
+                    self.navigationController?.pushViewController(vc, animated: true)
+                } else {
+                    self.getHomeDataArr?.removeAll()
+                    self.getHomeDataArr = str
+                    self.collecV.reloadData()
+                }
+            }
+        }
+        vc.modalPresentationStyle = .overFullScreen
+        self.present(vc, animated: true)
     }
     @IBAction func btnLogin_Tap(_ sender: UIButton) {
         let vc = self.storyboard?.instantiateViewController(withIdentifier: "LoginVC") as! LoginVC
         self.navigationController?.pushViewController(vc, animated: false)
     }
+    
+    
 }
 extension HomeVCWithoutLoginVC :UICollectionViewDelegate,UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -97,8 +186,6 @@ extension HomeVCWithoutLoginVC :UICollectionViewDelegate,UICollectionViewDataSou
         cell.view_Instant.isHidden = true
         cell.btnCross.isHidden = true
         var is_instant_book_Status = data?.isInstantBook ?? 0
-        
-        
         
         if is_instant_book_Status == 0 {
             cell.view_Instant.isHidden = false
@@ -131,6 +218,9 @@ extension HomeVCWithoutLoginVC :UICollectionViewDelegate,UICollectionViewDataSou
         cell.view_Instant.isHidden = true
         cell.btnHeart.tag = indexPath.row
         cell.btnHeart.addTarget(self, action: #selector(buttonTapped(_:)), for: .touchUpInside)
+        
+        cell.btnInstantBook.tag = indexPath.row
+        cell.btnInstantBook.addTarget(self, action: #selector(InstantBook(_:)), for: .touchUpInside)
         cell.btnCross.isHidden = true
         if indexPath.row == 0 {
             cell.view_Instant.isHidden = false
@@ -145,21 +235,40 @@ extension HomeVCWithoutLoginVC :UICollectionViewDelegate,UICollectionViewDataSou
                print("Selected item at outer index: \(indexPath.item), inner index: \(innerIndexPath.item)")
                
                // Example: Navigate to a new view controller
-               let vc = self.storyboard?.instantiateViewController(withIdentifier: "LocationVC") as! LocationVC
-               vc.propertyID = "\(data?.propertyID ?? 0)"
-               self.navigationController?.pushViewController(vc, animated: true)
+               
+               let vc = self.storyboard?.instantiateViewController(withIdentifier: "LoginVC") as! LoginVC
+              
+               self.navigationController?.pushViewController(vc, animated: false)
+               
+//               let vc = self.storyboard?.instantiateViewController(withIdentifier: "LocationVC") as! LocationVC
+//               vc.propertyID = "\(data?.propertyID ?? 0)"
+//               self.navigationController?.pushViewController(vc, animated: true)
            }
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         print("Heloo")
-        let vc = self.storyboard?.instantiateViewController(withIdentifier: "LocationVC") as! LocationVC
-        self.navigationController?.pushViewController(vc, animated: true)
+        
+        let vc = self.storyboard?.instantiateViewController(withIdentifier: "LoginVC") as! LoginVC
+       
+        self.navigationController?.pushViewController(vc, animated: false)
+        
+//        let vc = self.storyboard?.instantiateViewController(withIdentifier: "LocationVC") as! LocationVC
+//        self.navigationController?.pushViewController(vc, animated: true)
     }
     
     @objc func buttonTapped(_ sender: UIButton) {
+        
         let vc = self.storyboard?.instantiateViewController(withIdentifier: "LoginVC") as! LoginVC
+       
+        self.navigationController?.pushViewController(vc, animated: false)
+    }
+    
+    @objc func InstantBook(_ sender: UIButton) {
+        
+        let vc = self.storyboard?.instantiateViewController(withIdentifier: "LoginVC") as! LoginVC
+       
         self.navigationController?.pushViewController(vc, animated: false)
     }
     

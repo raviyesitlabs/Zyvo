@@ -9,6 +9,7 @@ import UIKit
 
 class HomeCell: UICollectionViewCell {
     var didSelectItem: ((IndexPath) -> Void)? // Closure to handle selection
+    @IBOutlet weak var btnInstantBook: UIButton!
     @IBOutlet weak var imgBookMark: UIButton!
     @IBOutlet weak var view_Instant: UIView!
     @IBOutlet weak var btnHeart: UIButton!

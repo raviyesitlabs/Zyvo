@@ -298,6 +298,7 @@ class ProfileVC: UIViewController,UITextViewDelegate {
         self.tabBarController?.tabBar.isHidden = false
         viewModel.getProfile()
         
+        
     }
     
     private func bindViewModel() {
@@ -312,7 +313,6 @@ class ProfileVC: UIViewController,UITextViewDelegate {
             .compactMap { $0 }
             .assign(to: \.email, on: viewModelVerifyEmail)
             .store(in: &cancellables)
-        
         
         txt_PhoneVerification.textPublisher
             .compactMap { $0 }
@@ -426,7 +426,6 @@ class ProfileVC: UIViewController,UITextViewDelegate {
         
     }
     @IBAction func btnEditState_Tap(_ sender: UIButton) {
-        
         
         if isStateUpdateStatus {
             // Stop editing and call API
@@ -1268,6 +1267,9 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    
+                    self.showToast(response.message ?? "")
+                    
                     var txt = response.data?.addedStreetAddress ?? ""
                     self.txt_streetProfile.text = txt
                     self.btnEditStreet.setImage(UIImage(named: "EditPencilicon"), for: .normal)
@@ -1283,6 +1285,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    self.showToast(response.message ?? "")
                     var txt = response.data?.addedAboutMe ?? ""
                     self.txtV_AboutMe.text = txt
                     self.btnEditAboutMe.setImage(UIImage(named: "EditPencilicon"), for: .normal)
@@ -1299,6 +1302,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    self.showToast(response.message ?? "")
                     var image = response.data?.profileImageURL ?? ""
                     let imgURL = AppURL.imageURL + image
                     self.profileIMGURL = imgURL
@@ -1314,6 +1318,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    self.showToast(response.message ?? "")
                     var addedlng = response.data?.addedlanguage ?? ""
                     self.myLanguageArr.append(addedlng)
                     self.collecV_MyLanguage.reloadData()
@@ -1329,6 +1334,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    self.showToast(response.message ?? "")
                     self.myLanguageArr.remove(at: self.indexforDeleteLanguage ?? 0)
                     self.collecV_MyLanguage.reloadData()
                     
@@ -1345,6 +1351,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    self.showToast(response.message ?? "")
                     var addedPet = response.data?.addedPet ?? ""
                     self.myPetsArr.append(addedPet)
                     self.collecV_MyPets.reloadData()
@@ -1360,6 +1367,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    self.showToast(response.message ?? "")
                     self.myPetsArr.remove(at: self.indexforDeletePet ?? 0)
                     self.collecV_MyPets.reloadData()
                     
@@ -1375,6 +1383,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    self.showToast(response.message ?? "")
                     var addedHobby = response.data?.addedHobby ?? ""
                     self.myHobbiesArr.append(addedHobby)
                     self.collecV_MyHobbies.reloadData()
@@ -1390,7 +1399,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
-                    
+                    self.showToast(response.message ?? "")
                     self.myHobbiesArr.remove(at: self.indexforDeleteHobby ?? 0)
                     self.collecV_MyHobbies.reloadData()
                     
@@ -1406,6 +1415,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    self.showToast(response.message ?? "")
                     var addedLocation = response.data?.addedLocation ?? ""
                     self.locationArray.append(addedLocation)
                     self.collecV_Place.reloadData()
@@ -1421,6 +1431,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    self.showToast(response.message ?? "")
                     self.locationArray.remove(at: self.indexforDeleteLocation ?? 0)
                     self.collecV_Place.reloadData()
                     
@@ -1435,6 +1446,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    self.showToast(response.message ?? "")
                     self.myWorkArr.remove(at: self.indexforDeleteWork ?? 0)
                     self.collecV_MyWork.reloadData()
                     
@@ -1449,6 +1461,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
+                    self.showToast(response.message ?? "")
                     var workAdded = response.data?.addedWork ?? ""
                     self.myWorkArr.append(workAdded)
                     self.collecV_MyWork.reloadData()
@@ -1464,7 +1477,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
-                    self.showToast(response.message ?? "")
+                   // self.showToast(response.message ?? "")
                     self.profileData = nil
                     self.profileData = response.data
                     var isEmailVerified = self.profileData?.emailVerified ?? 0
@@ -1509,8 +1522,6 @@ extension ProfileVC {
                     
                     self.fName = "\(self.profileData?.firstName  ?? "")"
                     self.lName = "\(self.profileData?.lastName  ?? "")"
-                    
-                    
                     
                     var street =  self.profileData?.street ?? ""
                     var city =  self.profileData?.city ?? ""
@@ -1571,7 +1582,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
-                    
+                    self.showToast(response.message ?? "")
                     print(response.data?.email ?? "","Email")
                     print(response.data?.userID ?? 0,"userID")
                     print(response.data?.otp ?? 0,"OTP")
@@ -1588,7 +1599,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "0","RESULT AFTER VERIFICATION")
-                    
+                    self.showToast(response.message ?? "")
                     self.resendBtnO.isUserInteractionEnabled = true
                     self.lbl_time.text = "00:00sec"
                     self.resendBtnO.setTitleColor(UIColor(red: 74/255, green: 234/255, blue: 177/255, alpha: 1), for: .normal)
@@ -1626,7 +1637,7 @@ extension ProfileVC {
             .sink { [weak self] result in
                 guard let self = self else{return}
                 result?.handle(success: { [self] response in
-                    
+                    self.showToast(response.message ?? "")
                     self.view_ConfirmNowIndentity.isHidden = true
                     self.view_VerifiedIndentity.isHidden = false
                     
@@ -1644,7 +1655,7 @@ extension ProfileVC {
                 result?.handle(success: { [self] response in
                     
                     print(response.message ?? "0","MESSAGE")
-                      
+                    self.showToast(response.message ?? "")
                     print(response.data?.phoneNumber ?? "","Phone")
                     print(response.data?.userID ?? 0,"userID")
                     print(response.data?.otp ?? 0,"OTP")
@@ -1665,7 +1676,7 @@ extension ProfileVC {
             .sink { [weak self] result in
                 guard let self = self else{return}
                 result?.handle(success: { [self] response in
-                    
+                    self.showToast(response.message ?? "")
                     print(response.data?.phoneNumber ?? "","Email")
                     print(response.data?.userID ?? 0,"userID")
                     print(response.data?.otp ?? 0,"OTP")
@@ -1691,7 +1702,7 @@ extension ProfileVC {
                 guard let self = self else{return}
                 result?.handle(success: { response in
                     print(response.message ?? "")
-                    
+                    self.showToast(response.message ?? "")
                     self.resendBtnO.isUserInteractionEnabled = true
                     self.lbl_time.text = "00:00sec"
                     self.resendBtnO.setTitleColor(UIColor(red: 74/255, green: 234/255, blue: 177/255, alpha: 1), for: .normal)

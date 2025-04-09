@@ -81,6 +81,17 @@ extension EmailLoginViewModel {
         var para : [String:Any] = [:]
         para[APIKeys.email] = self.email
         para[APIKeys.password] = self.Password
+        
+        para[APIKeys.device_type] = "ios"
+        
+        if let fcmToken = UserDefaults.standard.string(forKey: "fcmToken") {
+            print("FCM Token: \(fcmToken)")
+            para[APIKeys.fcmToken] = "\(fcmToken)"
+          
+        } else {
+            print("No FCM Token found")
+        }
+       
         APIServices<EmailLoginModel>().post(endpoint: .loginByEmail, parameters: para)
             .receive(on: DispatchQueue.main)
             .sink { complition in

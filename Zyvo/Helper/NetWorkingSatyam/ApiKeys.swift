@@ -11,10 +11,21 @@ class APIKeys {
     // MARK: -  Parameters
     
    
-    
+ 
    
+    static let reporter_id                = "reporter_id"
+    static let reported_user_id           = "reported_user_id"
+    static let reason                     = "reason"
+  
     static let group_channel                     = "group_channel"
     static let blockUnblock                     = "blockUnblock"
+    
+    static let favorite                     = "favorite"
+    
+    static let mute                     = "mute"
+    
+    
+    
     
     static let userID                     = "user_id"
     
@@ -122,6 +133,10 @@ class APIKeys {
     static let password                   = "password"
     static let social_id                   = "social_id"
     static let Desc                   = "description"
+    static let device_type                   = "device_type"
+    
+    
+    
     
     static let confirmPassword            = "password_confirmation"
    

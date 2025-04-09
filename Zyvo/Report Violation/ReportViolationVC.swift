@@ -28,8 +28,10 @@ class ReportViolationVC: UIViewController,UITextViewDelegate {
     
     var ReasonID = ""
     
+    var ComingFrom = ""
+    var reporter_id = ""
+    var reported_user_id = ""
    
-    
     let dropDown = DropDown()
     var backAction : (_ str: String) -> () = {_ in}
     let items = ["Inappropriate Content","Appropriate Content"]
@@ -74,8 +76,12 @@ class ReportViolationVC: UIViewController,UITextViewDelegate {
             self.showToast("Please select reason")
         } else if detailTxtV.text == "You can also add additional details to help us investigate further." || self.detailTxtV.text == "" {
             self.showToast("Please enter additional detail")
-        } else {
+        } else if ComingFrom == "checkout" {
             viewModel.apiForSubmitViolationReason(propertyID: self.propertyID, BookingID: self.bookingID, reportReasonsID: self.ReasonID, additionaldetails: self.detailTxtV.text ?? "")
+            
+        } else if ComingFrom == "MessageChat" {
+            viewModel.apiForSubmitChatReport(reporter_id: self.reporter_id, reported_user_id: self.reported_user_id, reason: self.txt_Reason.text ?? "", message: self.detailTxtV.text ?? "")
+       
         }
     }
     
@@ -134,25 +140,39 @@ extension ReportViolationVC {
                     
                 })
             }.store(in: &cancellables)
-     // Submit Violation Report Result
+     
+     
+     // Submit Chat Report Result
      viewModel.$getSubmitReportResult
          .receive(on: DispatchQueue.main)
          .sink { [weak self] result in
-             guard let self = self else{return}
+             guard let self = self else { return }
              result?.handle(success: { response in
-                 
-                 self.showToast(response.message ?? "")
+                 self.btnsubmit.setTitle("Submitted", for: .normal)
                  DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                     self.btnsubmit.setTitle("Submitted", for: .normal)
-             //        DispatchQueue.main.asyncAfter(deadline: .now() + 2){
-                         self.dismiss(animated: true)
+                     self.dismiss(animated: true) {
                          self.backAction("")
-             //        }
+                     }
                  }
-                 
-                 
              })
-         }.store(in: &cancellables)
+         }
+         .store(in: &cancellables)
+     
+     // Submit Chat Report Result
+     viewModel.$getSubmitChatReportResult
+         .receive(on: DispatchQueue.main)
+         .sink { [weak self] result in
+             guard let self = self else { return }
+             result?.handle(success: { response in
+                 self.btnsubmit.setTitle("Submitted", for: .normal)
+                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                     self.dismiss(animated: true) {
+                         self.backAction("ReportSubmitted")
+                     }
+                 }
+             })
+         }
+         .store(in: &cancellables)
 
     }
 }

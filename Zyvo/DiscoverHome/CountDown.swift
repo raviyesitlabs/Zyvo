@@ -8,6 +8,8 @@
 import Foundation
 
 class CurrentDateTimer {
+    
+    static let shared = CurrentDateTimer()
     private var timer: Timer?
     private var completion: ((String, String) -> Void)?
 
@@ -45,8 +47,6 @@ class CurrentDateTimer {
 }
 
 // Calculate time Difference
-
-import Foundation
 
 class TimeDifferenceCalculator {
     func calculateTimeDifference(startTimeString: String, endTimeString: String) -> (hours: Int, minutes: Int, seconds: Int)? {

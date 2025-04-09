@@ -97,6 +97,8 @@ extension AppURL {
         
         case report_violation                  =          "report_violation"
         
+        case report_chat                  =          "report_chat"
+        
         case same_as_mailing_address                  =          "same_as_mailing_address"
         case reviewhost                  =          "review_host"
         case AddCard                      =  "save_card_stripe"
@@ -145,6 +147,19 @@ extension AppURL {
         case chattoken           =          "chat_token"
         
         case block_user           =          "block_user"
+        
+        case mark_favorite_chat           =          "mark_favorite_chat"
+        
+        case mute_chat           =          "mute_chat"
+        
+        case toggle_archive_unarchive           =          "toggle_archive_unarchive"
+        
+        case send_chat_notification           =          "send_chat_notification"
+        
+        case delete_chat           =          "delete_chat"
+        
+        
+        
         case get_user_channels           =          "get_user_channels"
         case getuserbookings           =          "get_user_bookings"
         case userabout                   =          "user_about"
@@ -243,6 +258,10 @@ extension AppURL {
         case property_image_delete = "property_image_delete"
         case update_property_details = "update_property_details"
         case earnings = "earnings"
+        case hostReadBooking = "mark_host_bookings"
+        
+        case host_unread_bookings = "host_unread_bookings"
+        
         case get_host_booking_list = "get_host_booking_list"
         case approve_decline_booking = "approve_decline_booking"
         case host_booking_details = "host_booking_details"

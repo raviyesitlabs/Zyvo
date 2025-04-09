@@ -6,12 +6,14 @@
 //
 
 import UIKit
-
+import FirebaseMessaging
 class LogoutPopUpVC: UIViewController {
     
     @IBOutlet weak var btnCancel: UIButton!
     @IBOutlet weak var btnYes: UIButton!
     var backAction: () -> () = {}
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -25,14 +27,30 @@ class LogoutPopUpVC: UIViewController {
     
     @IBAction func btnYes_Tap(_ sender: UIButton) {
         self.backAction()
-        
         UserDetail.shared.removeUserId()
         UserDetail.shared.removeChatToken()
         UserDetail.shared.removeKeepMeLogin()
         UserDetail.shared.removeUserType()
-        
+        UserDetail.shared.removeTokenWith()
+        UserDetail.shared.removeisTimeExtend()
+        CurrentDateTimer.shared.stopTimer()
+        self.deleteFCMToken()
         self.dismiss(animated: true)
+    }
+    
+    func deleteFCMToken() {
         
+        // Delete FCM Token on local
+        UserDefaults.standard.removeObject(forKey: "twilioToken")
+        UserDefaults.standard.removeObject(forKey: "fcmtoken")
+        // Delete FCM Token on Firebase
+        FirebaseMessaging.Messaging.messaging().deleteData { error in
+            guard let error = error else {
+                print("Delete FCMToken successful!")
+                return
+            }
+            print("Delete FCMToken failed: \(String(describing: error.localizedDescription))!")
+        }
     }
     @IBAction func btnCancel_Tap(_ sender: UIButton) {
         self.dismiss(animated: true)

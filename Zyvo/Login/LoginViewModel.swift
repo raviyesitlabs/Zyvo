@@ -66,6 +66,16 @@ extension LoginViewModel {
         var para : [String:Any] = [:]
         para[APIKeys.phonenumber] = self.phone
         para[APIKeys.countryCode] = self.countryCode
+        para[APIKeys.device_type] = "ios"
+        if let fcmToken = UserDefaults.standard.string(forKey: "fcmToken") {
+            print("FCM Token: \(fcmToken)")
+            para[APIKeys.fcmToken] = "\(fcmToken)"
+          
+        } else {
+            print("No FCM Token found")
+        }
+        
+        
         APIServices<LoginModel>().post(endpoint: .loginByPhone, parameters: para)
             .receive(on: DispatchQueue.main)
             .sink { complition in
@@ -131,6 +141,16 @@ extension LoginViewModel {
          para[APIKeys.firstnameSocial] = fName
         para[APIKeys.lastnameSocial] = lName
          para[APIKeys.social_id] = socialID
+        
+        para[APIKeys.device_type] = "ios"
+        
+        if let fcmToken = UserDefaults.standard.string(forKey: "fcmToken") {
+            print("FCM Token: \(fcmToken)")
+            para[APIKeys.fcmToken] = "\(fcmToken)"
+          
+        } else {
+            print("No FCM Token found")
+        }
 
          APIServices<SocialLoginModel>().post(endpoint: .usersociallogin, parameters: para)
              .receive(on: DispatchQueue.main)
